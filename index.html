@@ -3450,7 +3450,9 @@
                     if (conCostInfo) conCostInfo.textContent = '';
                 } else if (assignments.length > 0) {
                     const pe = getPrestigeEffects();
-                    let totalNextCosts = 0;
+                    let totalQueuedCosts = 0;
+                    let activeCount = 0;
+                    let waitingCount = 0;
 
                     if (conLabel) { conLabel.style.color = 'var(--color-accent)'; conLabel.textContent = `Building (${assignments.length} queued):`; }
                     if (conList) {
@@ -3478,9 +3480,10 @@
                                 const ballCostScale = Math.max(1.01, bData.costMult - pe.costScaleReduction);
                                 taskCost = getCost(bData.baseCost, planet.ballBuildings[task.key], ballCostScale);
                             }
-                            totalNextCosts += taskCost;
+                            totalQueuedCosts += taskCost;
                             const pct = Math.min(100, Math.floor((task.timer / taskBT) * 100));
                             const waiting = task.timer >= taskBT && game.balls < taskCost;
+                            if (waiting) waitingCount++; else activeCount++;
                             const status = waiting ? `WAITING (need ${formatNumber(taskCost)})` : `${pct}% - next: ${formatNumber(taskCost)}`;
                             const name = bData ? bData.name : task.key;
                             const pName = task.type === 'celestial' ? 'Celestial' : (planet ? planet.name : '?');
@@ -3489,9 +3492,12 @@
                     }
 
                     if (conCostInfo) {
-                        const avgCostPerSec = totalNextCosts / effectiveBuildTime;
                         conCostInfo.style.color = 'var(--color-warning)';
-                        conCostInfo.textContent = `Spending ~${formatNumber(avgCostPerSec)} balls/sec on construction (${formatNumber(totalNextCosts)} queued)`;
+                        if (waitingCount === assignments.length) {
+                            conCostInfo.textContent = `All ${waitingCount} probes waiting for funds (${formatNumber(totalQueuedCosts)} total queued)`;
+                        } else {
+                            conCostInfo.textContent = `${activeCount} building, ${waitingCount} waiting (${formatNumber(totalQueuedCosts)} total queued)`;
+                        }
                     }
                 } else if (game.constructionProbes.count > 0) {
                     if (conLabel) { conLabel.style.color = 'var(--color-text-secondary)'; conLabel.textContent = 'Idle - all planets optimized or waiting for funds.'; }
