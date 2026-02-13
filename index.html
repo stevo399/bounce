@@ -891,6 +891,22 @@
                 unlock: () => game.probes && game.probes.launched, effect };
         });
 
+        // --- Celestial Acceleration (8) - purchasable during moon tier ---
+        const celestialAccelUpgrades = [
+            ['caccel1', 'Moonstone Mining', 'Rubber production x3', 1e12, () => game.celestialBodies.moons >= 3, { type: 'rubberMult', value: 3 }],
+            ['caccel2', 'Tidal Surge', 'Ball production x3', 5e12, () => game.celestialBodies.moons >= 10, { type: 'ballMult', value: 3 }],
+            ['caccel3', 'Lunar Foundries', 'Ball factory output x5', 25e12, () => game.celestialBodies.moons >= 25, { type: 'ballMult', value: 5 }],
+            ['caccel4', 'Gravitational Compression', 'Rubber use halved', 50e12, () => game.celestialBodies.moons >= 50, { type: 'cosmicRubberUseMult', value: 0.5 }],
+            ['caccel5', 'Orbital Assembly', 'Construction probes build 3x faster', 100e12, () => game.celestialBodies.moons >= 75, { type: 'buildTimeMult', value: 0.333 }],
+            ['caccel6', 'Celestial Harvest', 'Celestial structures output x5', 250e12, () => game.celestialBodies.moons >= 100, { type: 'celestialStructMult', value: 5 }],
+            ['caccel7', 'Mass Acceleration', 'All production x10', 1e15, () => game.celestialBodies.moons >= 250, { type: 'ballMult', value: 10 }],
+            ['caccel8', 'Lunar Convergence', 'All production x25', 5e15, () => game.celestialBodies.moons >= 500, { type: 'ballMult', value: 25 }]
+        ];
+        celestialAccelUpgrades.forEach(([key, name, desc, cost, unlock, effect]) => {
+            upgradeData[key] = { name, description: desc, cost, category: 'Celestial',
+                unlock, effect };
+        });
+
         // --- Celestial Tier Bonuses (9) - auto-granted at each celestial tier ---
         const celestialUpgrades = [
             ['celestial1', 'Tidal Forces', '+50% rubber production', { type: 'celestialRubberMult', value: 1.5 }, 1],
