@@ -1296,7 +1296,11 @@
         }
 
         // ===== EFFECT SYSTEM =====
+        let _cachedEffects = null;
+        let _effectsFrame = -1;
+        let _currentFrame = 0;
         function getEffects() {
+            if (_effectsFrame === _currentFrame && _cachedEffects) return _cachedEffects;
             const eff = {
                 clickAdd: 0, ballMult: 1, rubberMult: 1, autoCollect: 0,
                 chainSpeed: {}, costScaleReduction: {}, factorySpeed: {}, bulkSize: {},
@@ -1407,6 +1411,8 @@
                 eff.empireMomentum = 1;
             }
 
+            _cachedEffects = eff;
+            _effectsFrame = _currentFrame;
             return eff;
         }
 
@@ -2404,6 +2410,7 @@
 
         let lastTickTime = Date.now();
         function gameLoop() {
+            _currentFrame++;
             const now = Date.now();
             let elapsed = (now - lastTickTime) / 1000; // seconds since last tick
             lastTickTime = now;
@@ -2416,7 +2423,11 @@
                 gameTick(dt);
             }
             updateDisplay();
-            checkAchievements();
+            // Throttle milestone/achievement checks to once per second
+            if (_currentFrame % 10 === 0) {
+                checkMilestones();
+                checkAchievements();
+            }
         }
 
         function gameTick(dt) {
@@ -2543,7 +2554,6 @@
             processConstruction(dt);
 
             checkCosmicTiers();
-            checkMilestones();
         }
 
         // Display functions
@@ -3253,7 +3263,7 @@
                 nameSpan.textContent = planet.name;
                 const roleSpan = document.createElement('span');
                 roleSpan.className = 'planet-role';
-                roleSpan.dataset.roleSpan = index;
+                roleSpan.id = `planet-role-${index}`;
                 nameSpan.appendChild(roleSpan);
                 header.appendChild(nameSpan);
                 div.appendChild(header);
@@ -3261,13 +3271,13 @@
                 const stats = document.createElement('div');
                 stats.className = 'item-stats';
                 const rbSpan = document.createElement('span');
-                rbSpan.dataset.planetRb = index;
+                rbSpan.id = `planet-rb-${index}`;
                 stats.appendChild(rbSpan);
                 const bbSpan = document.createElement('span');
-                bbSpan.dataset.planetBb = index;
+                bbSpan.id = `planet-bb-${index}`;
                 stats.appendChild(bbSpan);
                 const rubberSpan = document.createElement('span');
-                rubberSpan.dataset.planetRubber = index;
+                rubberSpan.id = `planet-rubber-${index}`;
                 stats.appendChild(rubberSpan);
                 div.appendChild(stats);
 
@@ -3277,7 +3287,7 @@
                 ['rubber', 'ball', 'hybrid'].forEach(role => {
                     const btn = document.createElement('button');
                     btn.className = 'btn btn-small';
-                    btn.dataset.roleBtn = `${index}-${role}`;
+                    btn.id = `planet-role-btn-${index}-${role}`;
                     btn.textContent = role === 'rubber' ? 'Set Rubber World' : role === 'ball' ? 'Set Ball World' : 'Set Hybrid';
                     btn.style.display = planet.role === role ? 'none' : '';
                     btn.addEventListener('click', () => changePlanetRole(index, role));
@@ -3346,14 +3356,14 @@
                     game.probes.discoveredPlanets.forEach((disc, i) => {
                         const div = document.createElement('div');
                         div.className = 'planet-item';
-                        div.dataset.discIdx = i;
+                        div.id = `disc-planet-${i}`;
                         const nameSpan = document.createElement('span');
                         nameSpan.className = 'item-name';
                         nameSpan.textContent = disc.name + ' (Discovered)';
                         div.appendChild(nameSpan);
 
                         const btnDiv = document.createElement('div');
-                        btnDiv.dataset.discBtns = i;
+                        btnDiv.id = `disc-btns-${i}`;
                         btnDiv.style.display = 'flex'; btnDiv.style.gap = '8px'; btnDiv.style.marginTop = '8px'; btnDiv.style.flexWrap = 'wrap';
                         ['rubber', 'ball', 'hybrid'].forEach(role => {
                             const btn = document.createElement('button');
@@ -3378,22 +3388,22 @@
                                  planet.role === 'ball' ? ` (${(1.5 + eff.specialBonus).toFixed(2)}x balls, cap: 200)` :
                                  ` (cap: ${25 + eff.hybridCapAdd})`;
 
-                const roleSpan = container.querySelector(`[data-role-span="${index}"]`);
+                const roleSpan = document.getElementById(`planet-role-${index}`);
                 if (roleSpan) { roleSpan.className = `planet-role ${roleClass}`; roleSpan.textContent = planet.role + bonusText; }
 
                 // Update role button visibility (handles role changes without rebuild)
                 ['rubber', 'ball', 'hybrid'].forEach(role => {
-                    const btn = container.querySelector(`[data-role-btn="${index}-${role}"]`);
+                    const btn = document.getElementById(`planet-role-btn-${index}-${role}`);
                     if (btn) btn.style.display = planet.role === role ? 'none' : '';
                 });
 
-                const rbSpan = container.querySelector(`[data-planet-rb="${index}"]`);
+                const rbSpan = document.getElementById(`planet-rb-${index}`);
                 if (rbSpan) rbSpan.textContent = `Rubber buildings: ${Object.values(planet.rubberBuildings).reduce((a,b) => a+b, 0)}`;
 
-                const bbSpan = container.querySelector(`[data-planet-bb="${index}"]`);
+                const bbSpan = document.getElementById(`planet-bb-${index}`);
                 if (bbSpan) bbSpan.textContent = `Ball buildings: ${Object.values(planet.ballBuildings).reduce((a,b) => a+b, 0)}`;
 
-                const rubberSpan = container.querySelector(`[data-planet-rubber="${index}"]`);
+                const rubberSpan = document.getElementById(`planet-rubber-${index}`);
                 if (rubberSpan) rubberSpan.textContent = `Local rubber: ${formatNumber(planet.rubber)}`;
             });
 
@@ -3427,9 +3437,9 @@
             // Update discovered planet visibility
             const canCol = game.totalBalls >= getColonizationMilestone(game.colonizationCount);
             game.probes.discoveredPlanets.forEach((disc, i) => {
-                const div = container.querySelector(`[data-disc-idx="${i}"]`);
+                const div = document.getElementById(`disc-planet-${i}`);
                 if (div) div.style.opacity = canCol ? '1' : '0.6';
-                const btns = container.querySelector(`[data-disc-btns="${i}"]`);
+                const btns = document.getElementById(`disc-btns-${i}`);
                 if (btns) btns.style.display = canCol ? 'flex' : 'none';
             });
 
@@ -3680,14 +3690,14 @@
                 tierList.style.cssText = 'list-style: none; margin: 0; padding: 0;';
                 CELESTIAL_TIERS.forEach((tier, i) => {
                     const li = document.createElement('li');
-                    li.dataset.tierId = i;
+                    li.id = `cosmic-tier-${i}`;
                     li.style.cssText = 'padding: 10px 15px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;';
                     const label = document.createElement('span');
-                    label.dataset.tierLabel = i;
+                    label.id = `cosmic-tier-label-${i}`;
                     label.style.fontWeight = '600';
                     li.appendChild(label);
                     const info = document.createElement('span');
-                    info.dataset.tierInfo = i;
+                    info.id = `cosmic-tier-info-${i}`;
                     info.style.fontSize = '0.9em';
                     info.style.color = 'var(--color-text-secondary)';
                     li.appendChild(info);
@@ -3712,19 +3722,19 @@
             CELESTIAL_TIERS.forEach((tier, i) => {
                 const reached = game.cosmic.currentTier > i;
                 const threshold = tier.threshold * pe.cosmicThresholdMult;
-                const div = container.querySelector(`[data-tier-id="${i}"]`);
+                const div = document.getElementById(`cosmic-tier-${i}`);
                 if (div) {
                     div.style.border = `1px solid ${reached ? 'var(--color-success)' : 'var(--color-border)'}`;
                     div.style.background = reached ? 'rgba(16,185,129,0.1)' : 'var(--color-bg-tertiary)';
                 }
-                const label = container.querySelector(`[data-tier-label="${i}"]`);
+                const label = document.getElementById(`cosmic-tier-label-${i}`);
                 if (label) {
                     label.style.color = reached ? 'var(--color-success)' : 'var(--color-text-secondary)';
                     const bodyCount = tier.key ? game.celestialBodies[tier.key] : 0;
                     const bodyText = tier.key && bodyCount > 0 ? ` (${bodyCount})` : '';
                     label.textContent = `${reached ? '\u2713' : '\u25CB'} Tier ${i + 1}: ${tier.name}${bodyText}`;
                 }
-                const info = container.querySelector(`[data-tier-info="${i}"]`);
+                const info = document.getElementById(`cosmic-tier-info-${i}`);
                 if (info) info.textContent = reached ? `${formatNumber(getCosmicMultiplier())}x production` : `${formatNumber(threshold)} balls`;
             });
 
@@ -3734,11 +3744,11 @@
                 Object.keys(celestialStructureData).forEach(key => {
                     const data = celestialStructureData[key];
                     const unlocked = game.cosmic.currentTier >= data.tier;
-                    let row = structContainer.querySelector(`[data-struct-key="${key}"]`);
+                    let row = document.getElementById(`celestial-struct-${key}`);
 
                     if (!row && unlocked) {
                         row = document.createElement('li');
-                        row.dataset.structKey = key;
+                        row.id = `celestial-struct-${key}`;
                         row.style.cssText = 'padding: 10px 15px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-bg-tertiary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;';
 
                         const leftDiv = document.createElement('div');
@@ -3750,14 +3760,14 @@
                         descP.textContent = data.description;
                         leftDiv.appendChild(descP);
                         const statsSpan = document.createElement('div');
-                        statsSpan.dataset.structStats = key;
+                        statsSpan.id = `celestial-struct-stats-${key}`;
                         statsSpan.style.cssText = 'font-size: 0.85em; color: var(--color-accent);';
                         leftDiv.appendChild(statsSpan);
                         row.appendChild(leftDiv);
 
                         const buyBtn = document.createElement('button');
                         buyBtn.className = 'btn';
-                        buyBtn.dataset.structBuy = key;
+                        buyBtn.id = `celestial-struct-buy-${key}`;
                         buyBtn.style.cssText = 'white-space: nowrap;';
                         buyBtn.addEventListener('click', () => buyCelestialStructure(key));
                         row.appendChild(buyBtn);
@@ -3772,12 +3782,12 @@
                         const perUnit = data.ballsPerSec * eff.celestialStructMult * eff.ballMult;
                         const totalOutput = count * perUnit;
 
-                        const statsSpan = row.querySelector(`[data-struct-stats="${key}"]`);
+                        const statsSpan = document.getElementById(`celestial-struct-stats-${key}`);
                         if (statsSpan) {
                             statsSpan.textContent = `Owned: ${count} | ${formatNumber(perUnit)}/s each | Total: ${formatNumber(totalOutput)}/s`;
                         }
 
-                        const buyBtn = row.querySelector(`[data-struct-buy="${key}"]`);
+                        const buyBtn = document.getElementById(`celestial-struct-buy-${key}`);
                         if (buyBtn) {
                             const amt = buyAmount === 'max' ? Math.max(1, getMaxAffordable(data.baseCost, count, data.costMult, game.balls).count) : (buyAmount === 10 ? 10 : 1);
                             const bulkCost = buyAmount === 'max' ? getBulkCost(data.baseCost, count, data.costMult, amt) : (amt > 1 ? getBulkCost(data.baseCost, count, data.costMult, amt) : cost);
@@ -3913,22 +3923,22 @@
                     header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;';
                     const nameSpan = document.createElement('span');
                     nameSpan.style.fontWeight = '600';
-                    nameSpan.dataset.branchName = branch.key;
+                    nameSpan.id = `prestige-branch-name-${branch.key}`;
                     header.appendChild(nameSpan);
                     const maxSpan = document.createElement('span');
                     maxSpan.style.color = 'var(--color-success)';
-                    maxSpan.dataset.branchMax = branch.key;
+                    maxSpan.id = `prestige-branch-max-${branch.key}`;
                     header.appendChild(maxSpan);
                     div.appendChild(header);
 
                     const descP = document.createElement('p');
                     descP.style.cssText = 'font-size: 0.85em; color: var(--color-text-secondary); margin-bottom: 8px;';
-                    descP.dataset.branchDesc = branch.key;
+                    descP.id = `prestige-branch-desc-${branch.key}`;
                     div.appendChild(descP);
 
                     const btn = document.createElement('button');
                     btn.className = 'btn btn-small';
-                    btn.dataset.branchBtn = branch.key;
+                    btn.id = `prestige-branch-btn-${branch.key}`;
                     btn.addEventListener('click', () => buyPrestigeUpgrade(branch.key));
                     div.appendChild(btn);
 
@@ -3942,19 +3952,19 @@
                 const maxed = level >= branch.costs.length;
                 const nextCost = maxed ? null : branch.costs[level];
 
-                const nameSpan = treeDiv.querySelector(`[data-branch-name="${branch.key}"]`);
+                const nameSpan = document.getElementById(`prestige-branch-name-${branch.key}`);
                 if (nameSpan) nameSpan.textContent = `${branch.name} (${level}/${branch.costs.length})`;
 
-                const maxSpan = treeDiv.querySelector(`[data-branch-max="${branch.key}"]`);
+                const maxSpan = document.getElementById(`prestige-branch-max-${branch.key}`);
                 if (maxSpan) maxSpan.textContent = maxed ? 'MAX' : '';
 
-                const descP = treeDiv.querySelector(`[data-branch-desc="${branch.key}"]`);
+                const descP = document.getElementById(`prestige-branch-desc-${branch.key}`);
                 if (descP) {
                     descP.textContent = level > 0 ? `Current: ${branch.desc[level - 1]}` : 'Not purchased';
                     if (!maxed) descP.textContent += ` | Next: ${branch.desc[level]}`;
                 }
 
-                const btn = treeDiv.querySelector(`[data-branch-btn="${branch.key}"]`);
+                const btn = document.getElementById(`prestige-branch-btn-${branch.key}`);
                 if (btn) {
                     btn.style.display = maxed ? 'none' : '';
                     if (!maxed) {
