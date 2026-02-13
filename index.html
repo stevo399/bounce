@@ -2189,28 +2189,30 @@
                     // Planet building task
                     const planet = game.planets[task.planetIndex];
                     if (!planet) { completed.push(i); return; }
-                    let cost;
+                    let data, costScale;
                     if (task.type === 'rubber') {
-                        const data = rubberBuildingData[task.key];
-                        const costScale = Math.max(1.01, data.costMult - (eff.costScaleReduction[task.key] || 0) - pe.costScaleReduction);
-                        cost = Math.floor(getCost(data.baseCost, planet.rubberBuildings[task.key], costScale) * eff.costMult);
+                        data = rubberBuildingData[task.key];
+                        costScale = Math.max(1.01, data.costMult - (eff.costScaleReduction[task.key] || 0) - pe.costScaleReduction);
                     } else {
-                        const data = ballBuildingData[task.key];
-                        const ballCostScale = Math.max(1.01, data.costMult - pe.costScaleReduction);
-                        cost = Math.floor(getCost(data.baseCost, planet.ballBuildings[task.key], ballCostScale) * eff.costMult);
+                        data = ballBuildingData[task.key];
+                        costScale = Math.max(1.01, data.costMult - pe.costScaleReduction);
                     }
-                    if (game.balls >= cost) {
-                        // Enforce building cap at build time
-                        const buildCap = planet.role === 'hybrid' ? 25 + eff.hybridCapAdd : 200;
-                        const currentCount = task.type === 'rubber' ? planet.rubberBuildings[task.key] : planet.ballBuildings[task.key];
-                        if (currentCount >= buildCap) {
-                            completed.push(i);
-                            return;
-                        }
-                        game.balls -= cost;
-                        if (task.type === 'rubber') planet.rubberBuildings[task.key]++;
-                        else planet.ballBuildings[task.key]++;
-                        game.constructionProbes.totalBuilt++;
+                    const buildCap = planet.role === 'hybrid' ? 25 + eff.hybridCapAdd : 200;
+                    const currentCount = task.type === 'rubber' ? planet.rubberBuildings[task.key] : planet.ballBuildings[task.key];
+                    if (currentCount >= buildCap) {
+                        completed.push(i);
+                        return;
+                    }
+                    // Batch-build: buy as many as affordable up to cap
+                    const maxToCap = buildCap - currentCount;
+                    const affordable = getMaxAffordable(data.baseCost, currentCount, costScale, game.balls / eff.costMult);
+                    const batchCount = Math.min(affordable.count, maxToCap);
+                    if (batchCount > 0) {
+                        const totalCost = Math.floor(getBulkCost(data.baseCost, currentCount, costScale, batchCount) * eff.costMult);
+                        game.balls -= totalCost;
+                        if (task.type === 'rubber') planet.rubberBuildings[task.key] += batchCount;
+                        else planet.ballBuildings[task.key] += batchCount;
+                        game.constructionProbes.totalBuilt += batchCount;
                         completed.push(i);
                     } else {
                         task.waitTime = (task.waitTime || 0) + dt;
