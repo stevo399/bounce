@@ -3126,11 +3126,16 @@
             });
 
             // Sort visible upgrades by price (cheapest first)
+            // Only reorder DOM if the order changed (avoids breaking clicks in Firefox)
             visibleKeys.sort((a, b) => upgradeData[a].cost - upgradeData[b].cost);
-            visibleKeys.forEach(key => {
-                const div = document.getElementById(`upgrade-item-${key}`);
-                if (div) container.appendChild(div);
-            });
+            const sortKey = visibleKeys.join(',');
+            if (container.dataset.sortKey !== sortKey) {
+                container.dataset.sortKey = sortKey;
+                visibleKeys.forEach(key => {
+                    const div = document.getElementById(`upgrade-item-${key}`);
+                    if (div) container.appendChild(div);
+                });
+            }
 
             // Render tabs
             const tabContainer = document.getElementById('upgrade-tabs');
