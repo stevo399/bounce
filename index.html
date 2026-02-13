@@ -1808,7 +1808,7 @@
                         name: newName
                     });
                 }
-                showToast('Planets Discovered!', `${count} planet${count > 1 ? 's' : ''} found by Von Neumann probes.`);
+                announcePolite(`${count} planet${count > 1 ? 's' : ''} discovered by Von Neumann probes.`);
             }
         }
 
@@ -1858,7 +1858,7 @@
                     changed = true;
                     if (tier.key) {
                         game.celestialBodies[tier.key]++;
-                        showToast(`${tier.name} Formed!`, `${tier.name} #${game.celestialBodies[tier.key]} - ${getCosmicMultiplier()}x production!`);
+                        showToast(`${tier.name} Tier Reached!`, `New celestial tier unlocked!`);
                     } else {
                         showToast(`${tier.name} Reached!`, `${getCosmicMultiplier()}x production multiplier!`);
                     }
@@ -1877,7 +1877,7 @@
                         if (earned > current) {
                             const gain = earned - current;
                             game.celestialBodies[prevTier.key] = earned;
-                            showToast(`${prevTier.name} Formed!`, `+${gain} ${prevTier.name}${gain > 1 ? 's' : ''} (total: ${earned}) - ${formatNumber(getCosmicMultiplier())}x production`);
+                            announcePolite(`+${gain} ${prevTier.name}${gain > 1 ? 's' : ''} (total: ${earned})`);
                             changed = true;
                         }
                     }
