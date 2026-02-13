@@ -815,12 +815,12 @@
 
         // --- Synergy (6) ---
         const synergyUpgrades = [
-            ['synergy1', 'Streamlined Pipeline', 'All 6 stages at 5+: +25% rubber', 50000, 5, 0.25],
-            ['synergy2', 'Industrial Complex', 'All 6 stages at 10+: +50% rubber', 200000, 10, 0.5],
-            ['synergy3', 'Manufacturing Empire', 'All 6 stages at 20+: +100% rubber', 1000000, 20, 1.0],
-            ['synergy4', 'Rubber Baron', 'All 6 stages at 35+: +200% rubber', 5000000, 35, 2.0],
-            ['synergy5', 'Polymer Singularity', 'All 6 stages at 50+: +400% rubber', 25000000, 50, 4.0],
-            ['synergy6', 'Molecular Mastery', 'All 6 stages at 75+: +800% rubber', 100000000, 75, 8.0]
+            ['synergy1', 'Streamlined Pipeline', 'Own 5+ of each rubber supply chain building: +25% rubber', 50000, 5, 0.25],
+            ['synergy2', 'Industrial Complex', 'Own 10+ of each rubber supply chain building: +50% rubber', 200000, 10, 0.5],
+            ['synergy3', 'Manufacturing Empire', 'Own 20+ of each rubber supply chain building: +100% rubber', 1000000, 20, 1.0],
+            ['synergy4', 'Rubber Baron', 'Own 35+ of each rubber supply chain building: +200% rubber', 5000000, 35, 2.0],
+            ['synergy5', 'Polymer Singularity', 'Own 50+ of each rubber supply chain building: +400% rubber', 25000000, 50, 4.0],
+            ['synergy6', 'Molecular Mastery', 'Own 75+ of each rubber supply chain building: +800% rubber', 100000000, 75, 8.0]
         ];
         synergyUpgrades.forEach(([key, name, desc, cost, req, value]) => {
             upgradeData[key] = { name, description: desc, cost, category: 'Synergy',
