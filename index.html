@@ -2275,7 +2275,10 @@
 
             const eff = getEffects();
             const clickAmount = Math.floor((1 + eff.clickAdd) * eff.cosmicClickMult);
-            document.getElementById('collect-btn').textContent = `🎾 Bounce! (Collect ${formatNumber(clickAmount)} ball${clickAmount === 1 ? '' : 's'})`;
+            const collectBtn = document.getElementById('collect-btn');
+            const clickLabel = `Bounce to collect ${formatNumber(clickAmount)} ball${clickAmount === 1 ? '' : 's'} manually`;
+            collectBtn.textContent = `🎾 ${clickLabel}`;
+            collectBtn.setAttribute('aria-label', clickLabel);
             const ballBuildings = getAllBallBuildings();
             const rubberBuildings = getAllRubberBuildings();
 
