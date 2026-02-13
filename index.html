@@ -3299,6 +3299,11 @@
                 conCostInfo.style.cssText = 'font-size: 0.9em; margin-top: 4px;';
                 container.appendChild(conCostInfo);
 
+                const conRemaining = document.createElement('p');
+                conRemaining.id = 'construction-remaining';
+                conRemaining.style.cssText = 'font-size: 0.9em; margin-top: 4px;';
+                container.appendChild(conRemaining);
+
                 const pauseBtn = document.createElement('button');
                 pauseBtn.className = 'btn btn-small';
                 pauseBtn.id = 'pause-construction-btn';
@@ -3405,6 +3410,33 @@
                     conActivity.textContent = 'Build construction probes to automate your empire.';
                     if (conCostInfo) conCostInfo.textContent = '';
                 }
+            }
+
+            const conRemaining = document.getElementById('construction-remaining');
+            if (conRemaining && game.constructionProbes.count > 0) {
+                const rubberTypes = Object.keys(rubberBuildingData).length;
+                const ballTypes = Object.keys(ballBuildingData).length;
+                const hybridCap = 25 + eff.hybridCapAdd;
+                let totalCap = 0;
+                let totalBuilt = 0;
+                game.planets.forEach(planet => {
+                    if (planet.role === 'rubber') {
+                        totalCap += rubberTypes * 200;
+                    } else if (planet.role === 'ball') {
+                        totalCap += ballTypes * 200;
+                    } else {
+                        totalCap += (rubberTypes + ballTypes) * hybridCap;
+                    }
+                    Object.values(planet.rubberBuildings).forEach(c => totalBuilt += c);
+                    Object.values(planet.ballBuildings).forEach(c => totalBuilt += c);
+                });
+                const remaining = Math.max(0, totalCap - totalBuilt);
+                conRemaining.style.color = remaining > 0 ? 'var(--color-text-secondary)' : 'var(--color-success)';
+                conRemaining.textContent = remaining > 0
+                    ? `Buildings remaining: ${formatNumber(remaining)} of ${formatNumber(totalCap)} (${formatNumber(totalBuilt)} built)`
+                    : `All ${formatNumber(totalCap)} building slots filled across ${game.planets.length} planets.`;
+            } else if (conRemaining) {
+                conRemaining.textContent = '';
             }
 
             const conCost = getCost(CONSTRUCTION_BASE_COST, game.constructionProbes.count, CONSTRUCTION_COST_MULT);
