@@ -1803,6 +1803,7 @@
         const CONSTRUCTION_BASE_COST = 5000;
         const CONSTRUCTION_COST_MULT = 1.15;
         const CONSTRUCTION_BUILD_TIME = 30;
+        const CONSTRUCTION_DISCOUNT = 0.1; // Probes pay 10% of building cost
 
         // ===== COSMIC & PRESTIGE =====
         const CELESTIAL_TIERS = [
@@ -2173,7 +2174,7 @@
                     // Celestial structure task
                     if (task.type === 'celestial') {
                         const data = celestialStructureData[task.key];
-                        const cost = getCost(data.baseCost, game.celestialStructures[task.key], data.costMult);
+                        const cost = Math.floor(getCost(data.baseCost, game.celestialStructures[task.key], data.costMult) * CONSTRUCTION_DISCOUNT);
                         if (game.balls >= cost) {
                             game.balls -= cost;
                             game.celestialStructures[task.key]++;
@@ -2203,12 +2204,13 @@
                         completed.push(i);
                         return;
                     }
-                    // Batch-build: buy as many as affordable up to cap
+                    // Batch-build: buy as many as affordable up to cap (probes pay 10% cost)
                     const maxToCap = buildCap - currentCount;
-                    const affordable = getMaxAffordable(data.baseCost, currentCount, costScale, game.balls / eff.costMult);
+                    const discountBudget = game.balls / (eff.costMult * CONSTRUCTION_DISCOUNT);
+                    const affordable = getMaxAffordable(data.baseCost, currentCount, costScale, discountBudget);
                     const batchCount = Math.min(affordable.count, maxToCap);
                     if (batchCount > 0) {
-                        const totalCost = Math.floor(getBulkCost(data.baseCost, currentCount, costScale, batchCount) * eff.costMult);
+                        const totalCost = Math.floor(getBulkCost(data.baseCost, currentCount, costScale, batchCount) * eff.costMult * CONSTRUCTION_DISCOUNT);
                         game.balls -= totalCost;
                         if (task.type === 'rubber') planet.rubberBuildings[task.key] += batchCount;
                         else planet.ballBuildings[task.key] += batchCount;
@@ -3472,15 +3474,15 @@
                             const taskBT = task.type === 'celestial' ? effectiveBuildTime * 7 : effectiveBuildTime;
                             if (task.type === 'celestial') {
                                 bData = celestialStructureData[task.key];
-                                taskCost = getCost(bData.baseCost, game.celestialStructures[task.key], bData.costMult);
+                                taskCost = Math.floor(getCost(bData.baseCost, game.celestialStructures[task.key], bData.costMult) * CONSTRUCTION_DISCOUNT);
                             } else if (task.type === 'rubber') {
                                 bData = rubberBuildingData[task.key];
                                 const costScale = Math.max(1.01, bData.costMult - (eff.costScaleReduction[task.key] || 0) - pe.costScaleReduction);
-                                taskCost = getCost(bData.baseCost, planet.rubberBuildings[task.key], costScale);
+                                taskCost = Math.floor(getCost(bData.baseCost, planet.rubberBuildings[task.key], costScale) * eff.costMult * CONSTRUCTION_DISCOUNT);
                             } else {
                                 bData = ballBuildingData[task.key];
                                 const ballCostScale = Math.max(1.01, bData.costMult - pe.costScaleReduction);
-                                taskCost = getCost(bData.baseCost, planet.ballBuildings[task.key], ballCostScale);
+                                taskCost = Math.floor(getCost(bData.baseCost, planet.ballBuildings[task.key], ballCostScale) * eff.costMult * CONSTRUCTION_DISCOUNT);
                             }
                             totalQueuedCosts += taskCost;
                             const pct = Math.min(100, Math.floor((task.timer / taskBT) * 100));
