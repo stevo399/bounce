@@ -68,6 +68,8 @@
             align-items: center;
             padding: 10px 0;
             border-bottom: 1px solid var(--color-border);
+            flex-wrap: nowrap;
+            gap: 10px;
         }
 
         .stat-item:last-child {
@@ -77,12 +79,16 @@
         .stat-label {
             font-weight: 600;
             color: var(--color-text-secondary);
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .stat-value {
             font-size: 1.2rem;
             font-weight: 700;
             color: var(--color-accent);
+            white-space: nowrap;
+            text-align: right;
         }
 
         .section {
@@ -1224,13 +1230,18 @@
         function buyUpgrade(upgradeKey) {
             const upgrade = game.upgrades[upgradeKey];
             const data = upgradeData[upgradeKey];
-            
+
             if (!upgrade.purchased && game.balls >= data.cost) {
                 game.balls -= data.cost;
                 upgrade.purchased = true;
+                // Flash the button before it disappears
+                const btn = document.getElementById(`upgrade-btn-${upgradeKey}`);
+                if (btn) {
+                    btn.textContent = 'Purchased!';
+                    btn.style.background = 'var(--color-success)';
+                }
                 announcePolite(`Upgrade unlocked: ${data.name}. ${data.description}`);
-                updateDisplay();
-                checkAchievements();
+                setTimeout(() => { updateDisplay(); checkAchievements(); }, 400);
             } else if (upgrade.purchased) {
                 announcePolite('Upgrade already purchased');
             } else {
@@ -2382,8 +2393,24 @@
             return null;
         }
 
+        let lastTickTime = Date.now();
         function gameLoop() {
-            const dt = 0.1; // 10 ticks per second
+            const now = Date.now();
+            let elapsed = (now - lastTickTime) / 1000; // seconds since last tick
+            lastTickTime = now;
+            // Cap catch-up to 1 hour to avoid freeze on very long absences
+            elapsed = Math.min(elapsed, 3600);
+            // Process in chunks of 0.1s for accuracy
+            while (elapsed > 0) {
+                const dt = Math.min(elapsed, 0.1);
+                elapsed -= dt;
+                gameTick(dt);
+            }
+            updateDisplay();
+            checkAchievements();
+        }
+
+        function gameTick(dt) {
             const eff = getEffects();
 
             let totalActualBalls = 0;
@@ -2508,8 +2535,6 @@
 
             checkCosmicTiers();
             checkMilestones();
-            updateDisplay();
-            checkAchievements();
         }
 
         // Display functions
