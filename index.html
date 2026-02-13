@@ -1821,10 +1821,10 @@
 
         function getCosmicMultiplier() {
             const tierMult = Math.pow(2, game.cosmic.currentTier);
-            // Each celestial body gives 1.005x production
+            // Each celestial body gives 1.01x production
             let bodyMult = 1;
             Object.values(game.celestialBodies).forEach(count => {
-                if (count > 0) bodyMult *= Math.pow(1.005, count);
+                if (count > 0) bodyMult *= Math.pow(1.01, count);
             });
             return tierMult * bodyMult;
         }
