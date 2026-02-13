@@ -869,12 +869,18 @@
             upgradeData[key] = { name, description: desc, cost, category: 'Planets', unlock, effect };
         });
 
-        // --- Discovery Acceleration (4) - hidden until probe system exists ---
+        // --- Discovery Acceleration (10) - hidden until probe system exists ---
         const discoveryUpgrades = [
             ['disc1', 'Faster-Than-Light Probes', 'Probe travel time -50%', 30000000, { type: 'probeTravelMult', value: 0.5 }],
             ['disc2', 'Parallel Replication', 'Two planets discovered per cycle', 100000000, { type: 'replicationDouble', value: 1 }],
             ['disc3', 'Replication Efficiency', 'Cycle time scaling: 1.5x to 1.3x', 250000000, { type: 'replicationScale', value: 1.3 }],
-            ['disc4', 'Deep Space Network', 'Discoveries happen while offline', 500000000, { type: 'offlineDiscovery', value: 1 }]
+            ['disc4', 'Deep Space Network', 'Discoveries happen while offline', 500000000, { type: 'offlineDiscovery', value: 1 }],
+            ['disc5', 'Swarm Intelligence', '+2 planets per cycle (total 4)', 1e9, { type: 'probeDiscoverBonus', value: 2 }],
+            ['disc6', 'Warp Probes', 'Base cycle time 60s to 30s', 5e9, { type: 'replicationBaseMult', value: 0.5 }],
+            ['disc7', 'Exponential Replication', 'Cycle time scaling: 1.3x to 1.15x', 2e10, { type: 'replicationScale', value: 1.15 }],
+            ['disc8', 'Galactic Swarm', '+4 planets per cycle (total 8)', 1e11, { type: 'probeDiscoverBonus', value: 4 }],
+            ['disc9', 'Subspace Relay', 'Base cycle time to 10s', 5e11, { type: 'replicationBaseMult', value: 0.333 }],
+            ['disc10', 'Von Neumann Singularity', 'Cycle time no longer increases', 5e12, { type: 'replicationScale', value: 1.0 }]
         ];
         discoveryUpgrades.forEach(([key, name, desc, cost, effect]) => {
             upgradeData[key] = { name, description: desc, cost, category: 'Discovery',
@@ -1266,7 +1272,8 @@
                 cosmicClickMult: 1, cosmicOutputMult: 1, cosmicChainMult: 1,
                 rubberUseMult: 1, costMult: 1, cosmicEverythingMult: 1,
                 celestialRubberMult: 1, celestialBallMult: 1, celestialStructMult: 1,
-                probeTravelMult: 1, replicationDouble: false, replicationScale: 1.5, offlineDiscovery: false
+                probeTravelMult: 1, replicationDouble: false, replicationScale: 1.5, offlineDiscovery: false,
+                probeDiscoverBonus: 0, replicationBaseMult: 1
             };
             Object.keys(upgradeData).forEach(key => {
                 if (!game.upgrades[key] || !game.upgrades[key].purchased) return;
@@ -1309,6 +1316,8 @@
                     case 'replicationDouble': eff.replicationDouble = true; break;
                     case 'replicationScale': eff.replicationScale = e.value; break;
                     case 'offlineDiscovery': eff.offlineDiscovery = true; break;
+                    case 'probeDiscoverBonus': eff.probeDiscoverBonus += e.value; break;
+                    case 'replicationBaseMult': eff.replicationBaseMult *= e.value; break;
                 }
             });
             eff.rubberMult = eff.rubberMult * (1 + eff.synergyBonus);
@@ -1593,14 +1602,15 @@
                         let remaining = elapsed;
                         let offlineCycles = 0;
                         while (remaining > 0 && offlineCycles < 50) {
-                            const cycleDuration = 60 * Math.pow(eff.replicationScale, game.probes.replicationCycle);
+                            const baseCycle = 60 * eff.replicationBaseMult;
+                            const cycleDuration = baseCycle * Math.pow(eff.replicationScale, game.probes.replicationCycle);
                             const timeLeft = cycleDuration - game.probes.replicationTimer;
                             if (remaining >= timeLeft) {
                                 remaining -= timeLeft;
                                 game.probes.replicationTimer = 0;
                                 game.probes.replicationCycle++;
                                 offlineCycles++;
-                                const count = eff.replicationDouble ? 2 : 1;
+                                const count = (eff.replicationDouble ? 2 : 1) + eff.probeDiscoverBonus;
                                 for (let i = 0; i < count; i++) {
                                     const newName = generatePlanetName();
                                     game.probes.discoveredPlanets.push({
@@ -1734,21 +1744,22 @@
             }
 
             // Replication phase - discover planets
-            const cycleDuration = 60 * Math.pow(eff.replicationScale, game.probes.replicationCycle);
+            const baseCycle = 60 * eff.replicationBaseMult;
+            const cycleDuration = baseCycle * Math.pow(eff.replicationScale, game.probes.replicationCycle);
             game.probes.replicationTimer += dt;
             if (game.probes.replicationTimer >= cycleDuration) {
                 game.probes.replicationTimer -= cycleDuration;
                 game.probes.replicationCycle++;
-                // Discover planets (2 if replicationDouble)
-                const count = eff.replicationDouble ? 2 : 1;
+                // Discover planets: base 1, +1 from replicationDouble, +N from probeDiscoverBonus
+                const count = (eff.replicationDouble ? 2 : 1) + eff.probeDiscoverBonus;
                 for (let i = 0; i < count; i++) {
                     const newName = generatePlanetName();
                     game.probes.discoveredPlanets.push({
                         id: `planet_${Date.now()}_${i}`,
                         name: newName
                     });
-                    showToast('Planet Discovered!', `${newName} found by Von Neumann probes.`);
                 }
+                showToast('Planets Discovered!', `${count} planet${count > 1 ? 's' : ''} found by Von Neumann probes.`);
             }
         }
 
@@ -3212,8 +3223,8 @@
 
             const repText = document.getElementById('probe-replication-text');
             if (repText) {
-                const replicationScale = eff.replicationScale;
-                const cycleDuration = 60 * Math.pow(replicationScale, game.probes.replicationCycle);
+                const baseCycle = 60 * eff.replicationBaseMult;
+                const cycleDuration = baseCycle * Math.pow(eff.replicationScale, game.probes.replicationCycle);
                 const pct = Math.floor((game.probes.replicationTimer / cycleDuration) * 100);
                 repText.textContent = `Probes replicating... Next discovery: ${pct}% (cycle ${game.probes.replicationCycle + 1})`;
             }
