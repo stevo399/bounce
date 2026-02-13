@@ -963,7 +963,9 @@
         }
 
         function getCost(baseCost, count, mult) {
-            return Math.floor(baseCost * Math.pow(mult, count));
+            // Softened cost curve: exponent grows slower at high building counts
+            const effectiveCount = count / (1 + count * 0.005);
+            return Math.floor(baseCost * Math.pow(mult, effectiveCount));
         }
 
         function getBulkCost(baseCost, currentCount, mult, amount) {
@@ -1286,6 +1288,21 @@
                 const planetSynergyMult = 1 + synergyPlanets * 0.25;
                 eff.ballMult *= planetSynergyMult;
                 eff.rubberMult *= planetSynergyMult;
+            }
+
+            // Empire momentum: total buildings across all planets boost global production
+            let totalBuildings = 0;
+            game.planets.forEach(p => {
+                Object.values(p.rubberBuildings).forEach(c => totalBuildings += c);
+                Object.values(p.ballBuildings).forEach(c => totalBuildings += c);
+            });
+            if (totalBuildings > 0) {
+                const empireMult = 1 + Math.log2(1 + totalBuildings) * 0.15;
+                eff.ballMult *= empireMult;
+                eff.rubberMult *= empireMult;
+                eff.empireMomentum = empireMult;
+            } else {
+                eff.empireMomentum = 1;
             }
 
             return eff;
@@ -2315,9 +2332,10 @@
             document.getElementById('rps-display').textContent = formatNumber(rps);
             const synergyPlanets = Math.max(0, game.planets.length - 5);
             const synergyText = synergyPlanets > 0 ? ` (synergy: ${(1 + synergyPlanets * 0.25).toFixed(2)}x)` : '';
+            const empireText = eff.empireMomentum > 1 ? ` (empire: ${eff.empireMomentum.toFixed(2)}x)` : '';
             document.getElementById('planet-count').textContent = `${game.planets.length} colonized` +
                 (game.probes.discoveredPlanets.length > 0 ? ` / ${game.probes.discoveredPlanets.length} discovered` : '') +
-                synergyText;
+                synergyText + empireText;
 
             // Sell rubber button visibility
             const sellContainer = document.getElementById('sell-rubber-container');
@@ -2730,9 +2748,9 @@
                 msg.className = '';
                 msg.style.color = 'var(--color-text-secondary)';
                 if (planet.role === 'ball') {
-                    msg.textContent = 'This Ball World needs factories and shipping probes to deliver rubber from other planets.';
+                    msg.textContent = `Rubber ${supplyBreakdown}, Demand: 0/sec. This Ball World needs factories and shipping probes to deliver rubber from other planets.`;
                 } else {
-                    msg.textContent = 'No ball production buildings yet. Build factories to automate production!';
+                    msg.textContent = `Rubber ${supplyBreakdown}, Demand: 0/sec. Build factories to start automated production!`;
                 }
             } else if (totalRubberDemand === 0 && freeballBps > 0) {
                 msg.className = 'success-message';
