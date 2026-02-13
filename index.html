@@ -588,9 +588,9 @@
         </div>
 
         <div id="cosmic-panel" class="section" style="display: none;">
-            <h2>Cosmic Evolution</h2>
+            <h2>Celestial Bodies</h2>
             <p style="color: var(--color-text-secondary); margin-bottom: 15px;">
-                Your balls are coalescing into ever-larger cosmic bodies...
+                Your balls are coalescing into ever-larger celestial bodies...
             </p>
             <div id="cosmic-container"></div>
         </div>
@@ -660,6 +660,8 @@
             constructionProbes: { count: 0, assignments: [], totalBuilt: 0, paused: false },
 
             cosmic: { currentTier: 0 },
+            celestialBodies: { moons: 0, planets: 0, stars: 0, giantStars: 0, blackHoles: 0, supermassiveBlackHoles: 0, galaxies: 0, greatAttractors: 0 },
+            celestialStructures: { lunarQuarry: 0, planetaryCoreTap: 0, stellarForge: 0, nebulaCollector: 0, accretionDiskHarvester: 0, hawkingRadiationConverter: 0, darkMatterConverter: 0, cosmicStringResonator: 0 },
             prestige: {
                 singularityCount: 0,
                 singularityPoints: 0,
@@ -694,6 +696,17 @@
             cityOfFactories: { name: 'City of Factories', description: 'Entire cities dedicated to ball production', baseCost: 500000, costMult: 1.15, ballsPerSec: 10000, rubberPerSec: 500, unlockAt: 5000000 },
             dysonFoundry: { name: 'Dyson Sphere Foundry', description: 'Harnesses stellar energy for massive ball production', baseCost: 10000000, costMult: 1.15, ballsPerSec: 200000, rubberPerSec: 5000, unlockAt: 1000000000 },
             cosmicHarvester: { name: 'Cosmic Harvester', description: 'Converts cosmic energy directly into balls. No rubber required!', baseCost: 5000000, costMult: 1.15, ballsPerSec: 1000, rubberPerSec: 0, unlockAt: 5000000000 }
+        };
+
+        const celestialStructureData = {
+            lunarQuarry: { name: 'Lunar Quarry', description: 'Mines bouncy material from moon cores', baseCost: 1e13, costMult: 1.20, ballsPerSec: 1e6, tier: 1 },
+            planetaryCoreTap: { name: 'Planetary Core Tap', description: 'Taps planetary cores for ball energy', baseCost: 1e16, costMult: 1.20, ballsPerSec: 1e9, tier: 2 },
+            stellarForge: { name: 'Stellar Forge', description: 'Forges balls from stellar plasma', baseCost: 1e19, costMult: 1.20, ballsPerSec: 1e12, tier: 3 },
+            nebulaCollector: { name: 'Nebula Collector', description: 'Harvests ball matter from stellar remnants', baseCost: 1e22, costMult: 1.20, ballsPerSec: 1e15, tier: 4 },
+            accretionDiskHarvester: { name: 'Accretion Disk Harvester', description: 'Siphons ball energy from black hole accretion disks', baseCost: 1e25, costMult: 1.20, ballsPerSec: 1e18, tier: 5 },
+            hawkingRadiationConverter: { name: 'Hawking Radiation Converter', description: 'Converts Hawking radiation into pure balls', baseCost: 1e28, costMult: 1.20, ballsPerSec: 1e21, tier: 6 },
+            darkMatterConverter: { name: 'Dark Matter Converter', description: 'Transmutes dark matter into bouncy matter', baseCost: 1e31, costMult: 1.20, ballsPerSec: 1e24, tier: 7 },
+            cosmicStringResonator: { name: 'Cosmic String Resonator', description: 'Vibrates cosmic strings to produce infinite balls', baseCost: 1e34, costMult: 1.20, ballsPerSec: 1e27, tier: 8 }
         };
 
         // ===== UPGRADE DATA (101 total) =====
@@ -868,16 +881,19 @@
                 unlock: () => game.probes && game.probes.launched, effect };
         });
 
-        // --- Cosmic Tier Bonuses (6) - auto-granted at each cosmic tier ---
-        const cosmicUpgrades = [
-            ['cosmic1', 'Lunar Gravity', 'Click value x10', { type: 'cosmicClickMult', value: 10 }, 1],
-            ['cosmic2', 'Planetary Mass', 'All building output x2', { type: 'cosmicOutputMult', value: 2 }, 2],
-            ['cosmic3', 'Stellar Fusion', 'Chain stages feed 25% faster', { type: 'cosmicChainMult', value: 1.25 }, 3],
-            ['cosmic4', 'Giant Star Pressure', 'Ball factories use 25% less rubber', { type: 'cosmicRubberUseMult', value: 0.75 }, 4],
-            ['cosmic5', 'Event Horizon', 'All costs reduced 15%', { type: 'cosmicCostMult', value: 0.85 }, 5],
-            ['cosmic6', 'Singularity Proximity', 'Everything x5', { type: 'cosmicEverythingMult', value: 5 }, 6]
+        // --- Celestial Tier Bonuses (9) - auto-granted at each celestial tier ---
+        const celestialUpgrades = [
+            ['celestial1', 'Tidal Forces', '+50% rubber production', { type: 'celestialRubberMult', value: 1.5 }, 1],
+            ['celestial2', 'Planetary Tectonics', 'Click value x10', { type: 'cosmicClickMult', value: 10 }, 2],
+            ['celestial3', 'Solar Wind', '+100% ball production', { type: 'celestialBallMult', value: 2.0 }, 3],
+            ['celestial4', 'Supergiant Pressure', 'Ball factories use 25% less rubber', { type: 'cosmicRubberUseMult', value: 0.75 }, 4],
+            ['celestial5', 'Gravitational Lens', 'All costs reduced 15%', { type: 'cosmicCostMult', value: 0.85 }, 5],
+            ['celestial6', 'Hawking Insight', 'Chain stages feed 50% faster', { type: 'cosmicChainMult', value: 1.50 }, 6],
+            ['celestial7', 'Galactic Trade Routes', '3x shipping capacity', { type: 'shippingCapMult', value: 3 }, 7],
+            ['celestial8', 'Cosmic Resonance', '3x celestial structure output', { type: 'celestialStructMult', value: 3 }, 8],
+            ['celestial9', 'Singularity Proximity', 'Everything x5', { type: 'cosmicEverythingMult', value: 5 }, 9]
         ];
-        cosmicUpgrades.forEach(([key, name, desc, effect, tier]) => {
+        celestialUpgrades.forEach(([key, name, desc, effect, tier]) => {
             upgradeData[key] = { name, description: desc, cost: 0, category: 'Cosmic', autoGrant: true,
                 unlock: () => game.cosmic && game.cosmic.currentTier >= tier, effect };
         });
@@ -924,9 +940,12 @@
             { id: 'logistics', name: 'Logistics Network', description: 'Build your first shipping probe', check: () => game.shippingProbes.count > 0 },
             { id: 'automated_empire', name: 'Automated Empire', description: 'Build your first construction probe', check: () => game.constructionProbes.count > 0 },
             { id: 'ten_worlds', name: 'Galactic Industrialist', description: 'Control 10 planets', check: () => game.planets.length >= 10 },
-            { id: 'cosmic_moons', name: 'Lunar Formation', description: 'Reach cosmic tier: Moons', check: () => game.cosmic.currentTier >= 1 },
-            { id: 'cosmic_stars', name: 'Stellar Genesis', description: 'Reach cosmic tier: Stars', check: () => game.cosmic.currentTier >= 3 },
-            { id: 'cosmic_singularity', name: 'Event Horizon', description: 'Reach cosmic tier: Singularity', check: () => game.cosmic.currentTier >= 6 },
+            { id: 'cosmic_moons', name: 'Lunar Formation', description: 'Form your first Bouncy Moon', check: () => game.cosmic.currentTier >= 1 },
+            { id: 'cosmic_stars', name: 'Stellar Genesis', description: 'Form your first Bouncy Star', check: () => game.cosmic.currentTier >= 3 },
+            { id: 'cosmic_blackhole', name: 'Event Horizon', description: 'Form your first Bouncy Black Hole', check: () => game.cosmic.currentTier >= 5 },
+            { id: 'cosmic_galaxy', name: 'Galactic Architect', description: 'Form your first Bouncy Galaxy', check: () => game.cosmic.currentTier >= 7 },
+            { id: 'cosmic_singularity', name: 'Singularity Achieved', description: 'Reach the Singularity tier', check: () => game.cosmic.currentTier >= 9 },
+            { id: 'celestial_builder', name: 'Celestial Engineer', description: 'Build your first celestial structure', check: () => Object.values(game.celestialStructures).some(c => c > 0) },
             { id: 'first_prestige', name: 'Universe Reborn', description: 'Perform your first singularity reset', check: () => game.prestige.singularityCount >= 1 },
             { id: 'trillion_balls', name: 'Terabounce', description: 'Collect 1 trillion balls', check: () => game.totalBalls >= 1e12 }
         ];
@@ -953,6 +972,13 @@
                 if (s.indexOf('.') === -1) return s;
                 return s.replace(/\.?0+$/, '');
             }
+            if (num >= 1e39) return trim((num / 1e39).toFixed(2)) + 'Dd';
+            if (num >= 1e36) return trim((num / 1e36).toFixed(2)) + 'Ud';
+            if (num >= 1e33) return trim((num / 1e33).toFixed(2)) + 'Dc';
+            if (num >= 1e30) return trim((num / 1e30).toFixed(2)) + 'No';
+            if (num >= 1e27) return trim((num / 1e27).toFixed(2)) + 'Oc';
+            if (num >= 1e24) return trim((num / 1e24).toFixed(2)) + 'Sp';
+            if (num >= 1e21) return trim((num / 1e21).toFixed(2)) + 'Sx';
             if (num >= 1e18) return trim((num / 1e18).toFixed(2)) + 'Qi';
             if (num >= 1e15) return trim((num / 1e15).toFixed(2)) + 'Q';
             if (num >= 1e12) return trim((num / 1e12).toFixed(2)) + 'T';
@@ -1142,6 +1168,32 @@
             checkAchievements();
         }
 
+        function buyCelestialStructure(key) {
+            const data = celestialStructureData[key];
+            if (!data) return;
+            if (game.cosmic.currentTier < data.tier) { announcePolite('Tier not reached yet.'); return; }
+            const currentCount = game.celestialStructures[key];
+
+            let amount = 1;
+            if (buyAmount === 'max') {
+                amount = Math.max(1, getMaxAffordable(data.baseCost, currentCount, data.costMult, game.balls).count);
+            } else {
+                amount = buyAmount === 10 ? 10 : 1;
+            }
+
+            const totalCost = getBulkCost(data.baseCost, currentCount, data.costMult, amount);
+
+            if (game.balls >= totalCost) {
+                game.balls -= totalCost;
+                game.celestialStructures[key] += amount;
+                announcePolite(`Built ${amount} ${data.name}. Total: ${game.celestialStructures[key]}`);
+                updateDisplay();
+            } else {
+                const singleCost = getCost(data.baseCost, currentCount, data.costMult);
+                announcePolite(`Not enough balls. Need ${formatNumber(singleCost)}, you have ${formatNumber(game.balls)}`);
+            }
+        }
+
         function buyUpgrade(upgradeKey) {
             const upgrade = game.upgrades[upgradeKey];
             const data = upgradeData[upgradeKey];
@@ -1213,6 +1265,7 @@
                 buildTimeMult: 1, buildParallel: 1, buildAccel: false,
                 cosmicClickMult: 1, cosmicOutputMult: 1, cosmicChainMult: 1,
                 rubberUseMult: 1, costMult: 1, cosmicEverythingMult: 1,
+                celestialRubberMult: 1, celestialBallMult: 1, celestialStructMult: 1,
                 probeTravelMult: 1, replicationDouble: false, replicationScale: 1.5, offlineDiscovery: false
             };
             Object.keys(upgradeData).forEach(key => {
@@ -1249,6 +1302,9 @@
                     case 'cosmicRubberUseMult': eff.rubberUseMult *= e.value; break;
                     case 'cosmicCostMult': eff.costMult *= e.value; break;
                     case 'cosmicEverythingMult': eff.cosmicEverythingMult *= e.value; break;
+                    case 'celestialRubberMult': eff.celestialRubberMult *= e.value; break;
+                    case 'celestialBallMult': eff.celestialBallMult *= e.value; break;
+                    case 'celestialStructMult': eff.celestialStructMult *= e.value; break;
                     case 'probeTravelMult': eff.probeTravelMult *= e.value; break;
                     case 'replicationDouble': eff.replicationDouble = true; break;
                     case 'replicationScale': eff.replicationScale = e.value; break;
@@ -1260,6 +1316,9 @@
             // Apply cosmic upgrade bonuses
             eff.ballMult *= eff.cosmicOutputMult;
             eff.rubberMult *= eff.cosmicOutputMult;
+            // Apply celestial tier multipliers
+            eff.rubberMult *= eff.celestialRubberMult;
+            eff.ballMult *= eff.celestialBallMult;
             // cosmicChainMult: "25% faster" means multiply the total rate (1 + chainSpeed) by the factor
             // Convert: (1 + old) * mult = 1 + new => new = (1 + old) * mult - 1
             if (eff.cosmicChainMult !== 1) {
@@ -1354,9 +1413,12 @@
             { id: 'cityOfFactories', test: () => game.totalBalls >= 5000000, title: 'City of Factories Unlocked!', desc: 'Industrial mega-complexes!' },
             { id: 'logistics_panel', test: () => game.planets.length >= 2, title: 'Logistics Network!', desc: 'Ship rubber between planets and automate construction.', show: ['#logistics-panel'] },
             { id: 'dysonFoundry', test: () => game.totalBalls >= 1000000000, title: 'Dyson Sphere Foundry Unlocked!', desc: 'Harness the power of stars!' },
-            { id: 'cosmic_panel', test: () => game.totalBalls >= 5e8, title: 'Cosmic Evolution!', desc: 'Your balls are forming celestial bodies!', show: ['#cosmic-panel'] },
+            { id: 'cosmic_panel', test: () => game.totalBalls >= 1e13, title: 'Celestial Bodies!', desc: 'Your balls are forming celestial bodies!', show: ['#cosmic-panel'] },
             { id: 'cosmicHarvester', test: () => game.cosmic.currentTier >= 2, title: 'Cosmic Harvester Unlocked!', desc: 'Convert cosmic energy directly into balls!' },
-            { id: 'prestige_panel', test: () => game.prestige.singularityCount > 0 || game.cosmic.currentTier >= 6, title: 'Singularity!', desc: 'Collapse the universe for ultimate power.', show: ['#prestige-panel'] }
+            { id: 'celestial_star', test: () => game.cosmic.currentTier >= 3, title: 'Stellar Genesis!', desc: 'Your bouncy star illuminates the cosmos!' },
+            { id: 'celestial_blackhole', test: () => game.cosmic.currentTier >= 5, title: 'Event Horizon!', desc: 'A bouncy black hole bends spacetime!' },
+            { id: 'celestial_galaxy', test: () => game.cosmic.currentTier >= 7, title: 'Galactic Formation!', desc: 'A bouncy galaxy spirals into existence!' },
+            { id: 'prestige_panel', test: () => game.prestige.singularityCount > 0 || game.cosmic.currentTier >= 9, title: 'Singularity!', desc: 'Collapse the universe for ultimate power.', show: ['#prestige-panel'] }
         ];
 
         function checkMilestones() {
@@ -1414,6 +1476,8 @@
                 shippingProbes: game.shippingProbes,
                 constructionProbes: { count: game.constructionProbes.count, totalBuilt: game.constructionProbes.totalBuilt, paused: game.constructionProbes.paused },
                 cosmic: game.cosmic,
+                celestialBodies: game.celestialBodies,
+                celestialStructures: game.celestialStructures,
                 prestige: game.prestige,
                 sandbox: game.sandbox,
                 upgrades: game.upgrades,
@@ -1476,6 +1540,26 @@
                     game.constructionProbes.paused = s.constructionProbes.paused || false;
                 }
                 if (s.cosmic) Object.assign(game.cosmic, s.cosmic);
+                // Load celestial state with defaults for missing keys
+                if (s.celestialBodies) {
+                    Object.keys(game.celestialBodies).forEach(key => {
+                        if (s.celestialBodies[key] !== undefined) game.celestialBodies[key] = s.celestialBodies[key];
+                    });
+                }
+                if (s.celestialStructures) {
+                    Object.keys(game.celestialStructures).forEach(key => {
+                        if (s.celestialStructures[key] !== undefined) game.celestialStructures[key] = s.celestialStructures[key];
+                    });
+                }
+                // Migration: revalidate cosmic tier against new thresholds
+                if (game.cosmic.currentTier > 0) {
+                    let validTier = 0;
+                    for (let i = 0; i < CELESTIAL_TIERS.length; i++) {
+                        if (game.totalBalls >= CELESTIAL_TIERS[i].threshold) validTier = i + 1;
+                        else break;
+                    }
+                    game.cosmic.currentTier = validTier;
+                }
                 if (s.prestige) {
                     Object.assign(game.prestige, s.prestige);
                     if (!game.prestige.upgrades) game.prestige.upgrades = { production: 0, efficiency: 0, logistics: 0, discovery: 0, cosmic: 0 };
@@ -1677,13 +1761,16 @@
         const CONSTRUCTION_BUILD_TIME = 30;
 
         // ===== COSMIC & PRESTIGE =====
-        const COSMIC_TIERS = [
-            { name: 'Moons', threshold: 5e8 },
-            { name: 'Planets', threshold: 5e9 },
-            { name: 'Stars', threshold: 5e10 },
-            { name: 'Giant Stars', threshold: 5e11 },
-            { name: 'Black Holes', threshold: 5e12 },
-            { name: 'Singularity', threshold: 5e13 }
+        const CELESTIAL_TIERS = [
+            { name: 'Bouncy Moon', threshold: 1e13, key: 'moons', resetKey: null },
+            { name: 'Bouncy Planet', threshold: 1e16, key: 'planets', resetKey: 'moons' },
+            { name: 'Bouncy Star', threshold: 1e19, key: 'stars', resetKey: 'planets' },
+            { name: 'Giant Bouncy Star', threshold: 1e22, key: 'giantStars', resetKey: 'stars' },
+            { name: 'Bouncy Black Hole', threshold: 1e25, key: 'blackHoles', resetKey: 'giantStars' },
+            { name: 'Supermassive Bouncy Black Hole', threshold: 1e28, key: 'supermassiveBlackHoles', resetKey: 'blackHoles' },
+            { name: 'Bouncy Galaxy', threshold: 1e31, key: 'galaxies', resetKey: 'supermassiveBlackHoles' },
+            { name: 'Bouncy Great Attractor', threshold: 1e34, key: 'greatAttractors', resetKey: 'galaxies' },
+            { name: 'Singularity', threshold: 1e37, key: null, resetKey: 'greatAttractors' }
         ];
         const SINGULARITIES_TO_WIN = 10;
 
@@ -1692,15 +1779,23 @@
         }
 
         function checkCosmicTiers() {
-            const oldTier = game.cosmic.currentTier;
             const pe = getPrestigeEffects();
-            while (game.cosmic.currentTier < COSMIC_TIERS.length &&
-                   game.totalBalls >= COSMIC_TIERS[game.cosmic.currentTier].threshold * pe.cosmicThresholdMult) {
+            while (game.cosmic.currentTier < CELESTIAL_TIERS.length &&
+                   game.totalBalls >= CELESTIAL_TIERS[game.cosmic.currentTier].threshold * pe.cosmicThresholdMult) {
+                const tier = CELESTIAL_TIERS[game.cosmic.currentTier];
                 game.cosmic.currentTier++;
-            }
-            if (game.cosmic.currentTier > oldTier) {
-                const tier = COSMIC_TIERS[game.cosmic.currentTier - 1];
-                showToast(`Cosmic Tier: ${tier.name}!`, `${getCosmicMultiplier()}x production multiplier!`);
+                // Increment celestial body count (except singularity which has no key)
+                if (tier.key) {
+                    game.celestialBodies[tier.key]++;
+                    const bodyCount = game.celestialBodies[tier.key];
+                    showToast(`${tier.name} Formed!`, `${tier.name} #${bodyCount} - ${getCosmicMultiplier()}x production!`);
+                } else {
+                    showToast(`${tier.name} Reached!`, `${getCosmicMultiplier()}x production multiplier!`);
+                }
+                // Cascading reset: reset the previous tier's bodies to 0
+                if (tier.resetKey) {
+                    game.celestialBodies[tier.resetKey] = 0;
+                }
             }
         }
 
@@ -1715,7 +1810,7 @@
         }
 
         function performPrestigeReset() {
-            if (game.cosmic.currentTier < COSMIC_TIERS.length) return;
+            if (game.cosmic.currentTier < CELESTIAL_TIERS.length) return;
             if (game.sandbox) return;
 
             // Calculate SP earned
@@ -1768,6 +1863,8 @@
             game.shippingProbes = { count: getPrestigeEffects().freeShipping };
             game.constructionProbes = { count: 0, assignments: [], totalBuilt: 0 };
             game.cosmic = { currentTier: 0 };
+            game.celestialBodies = { moons: 0, planets: 0, stars: 0, giantStars: 0, blackHoles: 0, supermassiveBlackHoles: 0, galaxies: 0, greatAttractors: 0 };
+            game.celestialStructures = { lunarQuarry: 0, planetaryCoreTap: 0, stellarForge: 0, nebulaCollector: 0, accretionDiskHarvester: 0, hawkingRadiationConverter: 0, darkMatterConverter: 0, cosmicStringResonator: 0 };
 
             // Re-hide progressive panels
             game.seen = {};
@@ -1785,7 +1882,7 @@
             // Rebuild DOM containers
             ['rubber-buildings-container', 'ball-buildings-container', 'supply-chain-display',
              'production-status', 'upgrades-container', 'upgrade-tabs', 'planets-container', 'logistics-container',
-             'cosmic-container', 'prestige-container'].forEach(id => {
+             'cosmic-container', 'celestial-structures-container', 'prestige-container'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) { el.innerHTML = ''; delete el.dataset.built; delete el.dataset.planetKey; delete el.dataset.tabKey; }
             });
@@ -2001,8 +2098,26 @@
 
             const completed = [];
             game.constructionProbes.assignments.forEach((task, i) => {
+                const taskBuildTime = task.type === 'celestial' ? buildTime * 7 : buildTime;
                 task.timer += dt;
-                if (task.timer >= buildTime) {
+                if (task.timer >= taskBuildTime) {
+                    // Celestial structure task
+                    if (task.type === 'celestial') {
+                        const data = celestialStructureData[task.key];
+                        const cost = getCost(data.baseCost, game.celestialStructures[task.key], data.costMult);
+                        if (game.balls >= cost) {
+                            game.balls -= cost;
+                            game.celestialStructures[task.key]++;
+                            game.constructionProbes.totalBuilt++;
+                            completed.push(i);
+                        } else {
+                            task.waitTime = (task.waitTime || 0) + dt;
+                            if (task.waitTime > 10) completed.push(i);
+                        }
+                        task.timer = Math.min(task.timer, taskBuildTime);
+                        return;
+                    }
+                    // Planet building task
                     const planet = game.planets[task.planetIndex];
                     if (!planet) { completed.push(i); return; }
                     let cost;
@@ -2036,7 +2151,7 @@
                             completed.push(i);
                         }
                     }
-                    task.timer = Math.min(task.timer, buildTime);
+                    task.timer = Math.min(task.timer, taskBuildTime);
                 }
             });
 
@@ -2169,6 +2284,21 @@
                 });
                 if (minStage) return { planetIndex: bestIndex, type: 'rubber', key: minStage };
             }
+
+            // Fallback: try building cheapest affordable celestial structure
+            let bestCelestialKey = null, bestCelestialCost = Infinity;
+            Object.keys(celestialStructureData).forEach(key => {
+                const data = celestialStructureData[key];
+                if (game.cosmic.currentTier < data.tier) return;
+                const effective = game.celestialStructures[key] + getPending(-1, 'celestial', key);
+                const cost = getCost(data.baseCost, effective, data.costMult);
+                if (cost < bestCelestialCost && underCeiling(cost)) {
+                    bestCelestialCost = cost;
+                    bestCelestialKey = key;
+                }
+            });
+            if (bestCelestialKey) return { planetIndex: -1, type: 'celestial', key: bestCelestialKey };
+
             return null;
         }
 
@@ -2249,6 +2379,22 @@
                 }
             });
 
+            // Celestial structure production (no rubber needed)
+            let celestialBallProd = 0;
+            Object.keys(celestialStructureData).forEach(key => {
+                const count = game.celestialStructures[key];
+                if (count <= 0) return;
+                const data = celestialStructureData[key];
+                const output = count * data.ballsPerSec * eff.celestialStructMult * eff.ballMult * dt;
+                celestialBallProd += output;
+            });
+            if (celestialBallProd > 0) {
+                game.balls += celestialBallProd;
+                game.totalBalls += celestialBallProd;
+                totalActualBalls += celestialBallProd;
+                totalTheoreticalBalls += celestialBallProd;
+            }
+
             ballProductionRatio = totalTheoreticalBalls > 0 ? totalActualBalls / totalTheoreticalBalls : 0;
             currentBps = (totalTheoreticalBalls / dt) * ballProductionRatio + eff.autoCollect;
 
@@ -2311,7 +2457,13 @@
                     rubberFreeBps += rate;
                 }
             });
-            const bps = rubberDepBps * ballProductionRatio + rubberFreeBps + eff.autoCollect;
+            // Celestial structure BPS
+            let celestialBps = 0;
+            Object.keys(celestialStructureData).forEach(key => {
+                const count = game.celestialStructures[key];
+                if (count > 0) celestialBps += count * celestialStructureData[key].ballsPerSec * eff.celestialStructMult * eff.ballMult;
+            });
+            const bps = rubberDepBps * ballProductionRatio + rubberFreeBps + eff.autoCollect + celestialBps;
 
             // RPS: sum of each planet's bottleneck-limited throughput
             let rps = 0;
@@ -3256,12 +3408,15 @@
             const container = document.getElementById('cosmic-container');
             if (!container) return;
             const pe = getPrestigeEffects();
+            const eff = getEffects();
 
             if (!container.dataset.built) {
                 container.dataset.built = 'true';
+
+                // Celestial body tier list
                 const tierList = document.createElement('div');
                 tierList.id = 'cosmic-tier-list';
-                COSMIC_TIERS.forEach((tier, i) => {
+                CELESTIAL_TIERS.forEach((tier, i) => {
                     const div = document.createElement('div');
                     div.dataset.tierId = i;
                     div.style.cssText = 'padding: 10px 15px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;';
@@ -3277,10 +3432,20 @@
                     tierList.appendChild(div);
                 });
                 container.appendChild(tierList);
+
+                // Celestial structures section
+                const structHeader = document.createElement('h3');
+                structHeader.textContent = 'Celestial Structures';
+                structHeader.style.cssText = 'margin-top: 20px; color: var(--color-accent);';
+                container.appendChild(structHeader);
+
+                const structContainer = document.createElement('div');
+                structContainer.id = 'celestial-structures-container';
+                container.appendChild(structContainer);
             }
 
             // Update tier display in place
-            COSMIC_TIERS.forEach((tier, i) => {
+            CELESTIAL_TIERS.forEach((tier, i) => {
                 const reached = game.cosmic.currentTier > i;
                 const threshold = tier.threshold * pe.cosmicThresholdMult;
                 const div = container.querySelector(`[data-tier-id="${i}"]`);
@@ -3291,14 +3456,78 @@
                 const label = container.querySelector(`[data-tier-label="${i}"]`);
                 if (label) {
                     label.style.color = reached ? 'var(--color-success)' : 'var(--color-text-secondary)';
-                    label.textContent = `${reached ? '\u2713' : '\u25CB'} Tier ${i + 1}: ${tier.name}`;
+                    const bodyCount = tier.key ? game.celestialBodies[tier.key] : 0;
+                    const bodyText = tier.key && bodyCount > 0 ? ` (${bodyCount})` : '';
+                    label.textContent = `${reached ? '\u2713' : '\u25CB'} Tier ${i + 1}: ${tier.name}${bodyText}`;
                 }
                 const info = container.querySelector(`[data-tier-info="${i}"]`);
                 if (info) info.textContent = reached ? `${Math.pow(2, i + 1)}x production` : `${formatNumber(threshold)} balls`;
             });
 
+            // Celestial structures
+            const structContainer = document.getElementById('celestial-structures-container');
+            if (structContainer) {
+                Object.keys(celestialStructureData).forEach(key => {
+                    const data = celestialStructureData[key];
+                    const unlocked = game.cosmic.currentTier >= data.tier;
+                    let row = structContainer.querySelector(`[data-struct-key="${key}"]`);
+
+                    if (!row && unlocked) {
+                        row = document.createElement('div');
+                        row.dataset.structKey = key;
+                        row.style.cssText = 'padding: 10px 15px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-bg-tertiary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;';
+
+                        const leftDiv = document.createElement('div');
+                        const nameSpan = document.createElement('strong');
+                        nameSpan.textContent = data.name;
+                        leftDiv.appendChild(nameSpan);
+                        const descP = document.createElement('div');
+                        descP.style.cssText = 'font-size: 0.85em; color: var(--color-text-secondary);';
+                        descP.textContent = data.description;
+                        leftDiv.appendChild(descP);
+                        const statsSpan = document.createElement('div');
+                        statsSpan.dataset.structStats = key;
+                        statsSpan.style.cssText = 'font-size: 0.85em; color: var(--color-accent);';
+                        leftDiv.appendChild(statsSpan);
+                        row.appendChild(leftDiv);
+
+                        const buyBtn = document.createElement('button');
+                        buyBtn.className = 'btn';
+                        buyBtn.dataset.structBuy = key;
+                        buyBtn.style.cssText = 'white-space: nowrap;';
+                        buyBtn.addEventListener('click', () => buyCelestialStructure(key));
+                        row.appendChild(buyBtn);
+
+                        structContainer.appendChild(row);
+                    }
+
+                    if (row && unlocked) {
+                        row.style.display = '';
+                        const count = game.celestialStructures[key];
+                        const cost = getCost(data.baseCost, count, data.costMult);
+                        const perUnit = data.ballsPerSec * eff.celestialStructMult * eff.ballMult;
+                        const totalOutput = count * perUnit;
+
+                        const statsSpan = row.querySelector(`[data-struct-stats="${key}"]`);
+                        if (statsSpan) {
+                            statsSpan.textContent = `Owned: ${count} | ${formatNumber(perUnit)}/s each | Total: ${formatNumber(totalOutput)}/s`;
+                        }
+
+                        const buyBtn = row.querySelector(`[data-struct-buy="${key}"]`);
+                        if (buyBtn) {
+                            const amt = buyAmount === 'max' ? Math.max(1, getMaxAffordable(data.baseCost, count, data.costMult, game.balls).count) : (buyAmount === 10 ? 10 : 1);
+                            const bulkCost = buyAmount === 'max' ? getBulkCost(data.baseCost, count, data.costMult, amt) : (amt > 1 ? getBulkCost(data.baseCost, count, data.costMult, amt) : cost);
+                            buyBtn.textContent = `Buy ${amt > 1 ? amt + ' ' : ''}(${formatNumber(bulkCost)})`;
+                            buyBtn.disabled = game.balls < bulkCost;
+                        }
+                    } else if (row && !unlocked) {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
             // Collapse Universe button + SP preview
-            if (game.cosmic.currentTier >= COSMIC_TIERS.length && !game.sandbox) {
+            if (game.cosmic.currentTier >= CELESTIAL_TIERS.length && !game.sandbox) {
                 let spPreview = document.getElementById('sp-preview');
                 if (!spPreview) {
                     spPreview = document.createElement('div');
@@ -3535,7 +3764,7 @@
                 { id: 'upgrades-panel', label: 'Upgrades' },
                 { id: 'planets-panel', label: 'Planets & Universal Expansion' },
                 { id: 'logistics-panel', label: 'Logistics & Automation' },
-                { id: 'cosmic-panel', label: 'Cosmic Evolution' },
+                { id: 'cosmic-panel', label: 'Celestial Bodies' },
                 { id: 'prestige-panel', label: 'Singularity' },
                 { id: 'achievements-panel', label: 'Achievements' }
             ];
