@@ -1988,6 +1988,12 @@ function updateDisplay(forceFull) {
 		});
 		rps += Math.min(...planetStageRates);
 	});
+	let rubberDemand = 0;
+	game.planets.forEach(planet => {
+		Object.keys(planet.ballBuildings).forEach(key => {
+			rubberDemand += planet.ballBuildings[key] * ballBuildingData[key].rubberPerSec * eff.rubberUseMult;
+		});
+	});
 
 	document.getElementById('ball-count').textContent = formatNumber(game.balls);
 	document.getElementById('bps-display').textContent = formatNumber(bps);
@@ -2001,6 +2007,16 @@ function updateDisplay(forceFull) {
 	document.getElementById('planet-count').textContent = `${game.planets.length} colonized` +
 		(game.probes.discoveredPlanets.length > 0 ? ` / ${game.probes.discoveredPlanets.length} discovered` : '') +
 		synergyText + empireText;
+	const hasRubberWorld = game.planets.some(planet => planet.role === 'rubber');
+	const hasBallWorld = game.planets.some(planet => planet.role === 'ball');
+	const rubberFlowStat = document.getElementById('stat-rubber-flow');
+	if (rubberFlowStat) {
+		rubberFlowStat.style.display = hasRubberWorld && hasBallWorld ? '' : 'none';
+		const rubberFlow = document.getElementById('rubber-flow-display');
+		if (rubberFlow) {
+			rubberFlow.textContent = `Supply ${formatNumber(rps)}/s | Demand ${formatNumber(rubberDemand)}/s`;
+		}
+	}
 
 	updateNextStage();
 
