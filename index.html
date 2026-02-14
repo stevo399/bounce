@@ -4117,6 +4117,7 @@
             }
             if (!confirm('Import this save? This will overwrite your current progress.')) return;
             localStorage.setItem('bouncingBallUniverse', JSON.stringify(parsed));
+            window.removeEventListener('beforeunload', saveGame);
             location.reload();
         }
 
