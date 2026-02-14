@@ -362,6 +362,7 @@ let lastShippingRate = 0;
 let shippingPerPlanet = [];
 let buyAmount = 1; // 1, 10, or 'max'
 let upgradeTabFilter = 'All';
+let achievementTabFilter = 'All';
 
 // Utility functions
 function formatNumber(num) {
@@ -3384,7 +3385,7 @@ function renderPrestige() {
 function renderAchievements() {
 	const container = document.getElementById('achievements-container');
 
-	// Build once
+	// Build DOM elements once
 	if (!container.dataset.built) {
 		container.dataset.built = 'true';
 
@@ -3413,17 +3414,75 @@ function renderAchievements() {
 		});
 	}
 
-	// Update unlocked states
+	// Count for tab badges
+	const unlockedCount = achievementData.filter(ach => game.achievements[ach.id].unlocked).length;
+	const lockedCount = achievementData.length - unlockedCount;
+
+	// Render filter tabs
+	const tabContainer = document.getElementById('achievement-tabs');
+	if (tabContainer) {
+		const tabs = [
+			{ key: 'All', label: 'All', count: achievementData.length },
+			{ key: 'Unlocked', label: 'Unlocked', count: unlockedCount },
+			{ key: 'Locked', label: 'Locked', count: lockedCount }
+		];
+		if (!tabContainer.dataset.built) {
+			tabContainer.dataset.built = 'true';
+			tabs.forEach(tab => {
+				const btn = document.createElement('button');
+				btn.className = 'upgrade-tab-btn';
+				btn.setAttribute('role', 'tab');
+				btn.setAttribute('aria-label', `${tab.label} achievements`);
+				btn.dataset.tabKey = tab.key;
+				const textNode = document.createTextNode(tab.label + ' ');
+				btn.appendChild(textNode);
+				const badge = document.createElement('span');
+				badge.className = 'tab-badge';
+				btn.appendChild(badge);
+				btn.addEventListener('click', () => {
+					achievementTabFilter = tab.key;
+					renderAchievements();
+				});
+				tabContainer.appendChild(btn);
+			});
+		}
+		Array.from(tabContainer.children).forEach(btn => {
+			const key = btn.dataset.tabKey;
+			const isActive = achievementTabFilter === key;
+			btn.className = 'upgrade-tab-btn' + (isActive ? ' active' : '');
+			btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+			const badge = btn.querySelector('.tab-badge');
+			const tab = tabs.find(t => t.key === key);
+			if (badge && tab) {
+				badge.textContent = tab.count;
+				badge.style.display = '';
+			}
+		});
+	}
+
+	// Update unlocked states and apply filter
+	const showEmoji = achievementTabFilter === 'All';
 	achievementData.forEach(ach => {
 		const unlocked = game.achievements[ach.id].unlocked;
 		const div = document.getElementById(`achievement-${ach.id}`);
 		if (!div) return;
 
+		// Filter visibility
+		const visible = achievementTabFilter === 'All'
+			|| (achievementTabFilter === 'Unlocked' && unlocked)
+			|| (achievementTabFilter === 'Locked' && !unlocked);
+		div.style.display = visible ? '' : 'none';
+
 		if (unlocked) {
 			div.className = 'achievement-item';
 			div.setAttribute('aria-label', `Achievement unlocked: ${ach.name}`);
 			const nameSpan = document.getElementById(`achievement-name-${ach.id}`);
-			if (nameSpan) nameSpan.textContent = `\u2713 ${ach.name}`;
+			if (nameSpan) nameSpan.textContent = showEmoji ? `\u2713 ${ach.name}` : ach.name;
+		} else {
+			div.className = 'achievement-item achievement-locked';
+			div.setAttribute('aria-label', `Achievement locked: ${ach.name}`);
+			const nameSpan = document.getElementById(`achievement-name-${ach.id}`);
+			if (nameSpan) nameSpan.textContent = showEmoji ? `\uD83D\uDD12 ${ach.name}` : ach.name;
 		}
 	});
 }
