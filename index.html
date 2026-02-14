@@ -477,12 +477,12 @@
             body {
                 padding: 10px;
             }
-            
+
             .item-header {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .item-stats {
                 flex-direction: column;
                 gap: 5px;
@@ -564,9 +564,9 @@
                 <button class="buy-toggle-btn" data-amount="10" aria-pressed="false" aria-label="Buy 10 at a time">x10</button>
                 <button class="buy-toggle-btn" data-amount="max" aria-pressed="false" aria-label="Buy maximum affordable">Max</button>
             </div>
-            
+
             <div class="supply-chain" id="supply-chain-display"></div>
-            
+
             <div id="rubber-status-message"></div>
             <div id="sell-rubber-container" style="display: none; margin-bottom: 15px;">
                 <button class="btn btn-small" id="sell-rubber-btn" aria-label="Sell all rubber on this planet for 5 balls each">Sell Rubber (5 balls each)</button>
@@ -655,7 +655,7 @@
             // Flags
             automationOnline: false,
             rubberShortageWarned: false,
-            
+
             planets: [
                 {
                     id: 'earth',
@@ -1098,7 +1098,7 @@
 
         function hasCompleteSupplyChain() {
             const all = getAllRubberBuildings();
-            return all.extractor > 0 && all.cracker > 0 && all.reactor > 0 && 
+            return all.extractor > 0 && all.cracker > 0 && all.reactor > 0 &&
                    all.mixer > 0 && all.press > 0 && all.forming > 0;
         }
 
@@ -4083,21 +4083,72 @@
             location.reload();
         }
 
-        function exportSave() {
+        async function compressToBase64(jsonStr) {
+            const bytes = new TextEncoder().encode(jsonStr);
+            const cs = new CompressionStream('deflate-raw');
+            const writer = cs.writable.getWriter();
+            writer.write(bytes);
+            writer.close();
+            const chunks = [];
+            const reader = cs.readable.getReader();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+            }
+            const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+            const compressed = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const chunk of chunks) {
+                compressed.set(chunk, offset);
+                offset += chunk.length;
+            }
+            let binary = '';
+            for (let i = 0; i < compressed.length; i++) binary += String.fromCharCode(compressed[i]);
+            return btoa(binary);
+        }
+
+        async function decompressFromBase64(b64) {
+            const binary = atob(b64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const ds = new DecompressionStream('deflate-raw');
+            const writer = ds.writable.getWriter();
+            writer.write(bytes);
+            writer.close();
+            const chunks = [];
+            const reader = ds.readable.getReader();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+            }
+            const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+            const decompressed = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const chunk of chunks) {
+                decompressed.set(chunk, offset);
+                offset += chunk.length;
+            }
+            return new TextDecoder().decode(decompressed);
+        }
+
+        async function exportSave() {
             saveGame();
             const data = localStorage.getItem('bouncingBallUniverse') || '';
+            const encoded = await compressToBase64(data);
             const container = document.getElementById('save-transfer');
             const textarea = document.getElementById('save-transfer-text');
             if (container) container.style.display = '';
             if (textarea) {
-                textarea.value = data;
+                textarea.value = encoded;
                 textarea.focus();
                 textarea.select();
             }
             announcePolite('Save exported. Copy the text to back it up.');
         }
 
-        function importSave() {
+        async function importSave() {
             const textarea = document.getElementById('save-transfer-text');
             const raw = textarea ? textarea.value.trim() : '';
             if (!raw) {
@@ -4106,9 +4157,10 @@
             }
             let parsed;
             try {
-                parsed = JSON.parse(raw);
+                const json = await decompressFromBase64(raw);
+                parsed = JSON.parse(json);
             } catch (e) {
-                announcePolite('Invalid save data (not valid JSON).');
+                announcePolite('Invalid save data (could not decode).');
                 return;
             }
             if (!parsed || typeof parsed !== 'object' || parsed.totalBalls === undefined) {
