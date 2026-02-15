@@ -344,7 +344,35 @@ const achievementData = [
 	{ id: 'cosmic_singularity', name: 'Singularity Achieved', description: 'Reach the Singularity tier', check: () => game.cosmic.currentTier >= 9 },
 	{ id: 'celestial_builder', name: 'Celestial Engineer', description: 'Build your first celestial structure', check: () => Object.values(game.celestialStructures).some(c => c > 0) },
 	{ id: 'first_prestige', name: 'Universe Reborn', description: 'Perform your first singularity reset', check: () => game.prestige.singularityCount >= 1 },
-	{ id: 'trillion_balls', name: 'Terabounce', description: 'Collect 1 trillion balls', check: () => game.totalBalls >= 1e12 }
+	{ id: 'trillion_balls', name: 'Terabounce', description: 'Collect 1 trillion balls', check: () => game.totalBalls >= 1e12 },
+	{ id: 'ten_trillion_balls', name: 'Decabounce', description: 'Collect 10 trillion balls', check: () => game.totalBalls >= 1e13 },
+	{ id: 'quadrillion_balls', name: 'Petabounce', description: 'Collect 1 quadrillion balls', check: () => game.totalBalls >= 1e15 },
+	{ id: 'quintillion_balls', name: 'Exabounce', description: 'Collect 1 quintillion balls', check: () => game.totalBalls >= 1e18 },
+	{ id: 'sextillion_balls', name: 'Zettabounce', description: 'Collect 1 sextillion balls', check: () => game.totalBalls >= 1e21 },
+	{ id: 'septillion_balls', name: 'Yottabounce', description: 'Collect 1 septillion balls', check: () => game.totalBalls >= 1e24 },
+	{ id: 'all_world_types', name: 'Balanced Empire', description: 'Control at least one Rubber, Ball, and Hybrid world', check: () => {
+		const hasRubber = game.planets.some(p => p.role === 'rubber');
+		const hasBall = game.planets.some(p => p.role === 'ball');
+		const hasHybrid = game.planets.some(p => p.role === 'hybrid');
+		return hasRubber && hasBall && hasHybrid;
+	}},
+	{ id: 'fifteen_worlds', name: 'Planetary Sovereign', description: 'Control 15 planets', check: () => game.planets.length >= 15 },
+	{ id: 'twenty_worlds', name: 'Sector Governor', description: 'Control 20 planets', check: () => game.planets.length >= 20 },
+	{ id: 'hundred_factories', name: 'Factory Megacluster', description: 'Own 100 ball production buildings', check: () => getTotalBallBuildings() >= 100 },
+	{ id: 'five_hundred_factories', name: 'Factory Ecumenopolis', description: 'Own 500 ball production buildings', check: () => getTotalBallBuildings() >= 500 },
+	{ id: 'rubber_titan', name: 'Rubber Titan', description: 'Own 100 total rubber chain buildings', check: () => Object.values(getAllRubberBuildings()).reduce((a, b) => a + b, 0) >= 100 },
+	{ id: 'supply_chain_dominance', name: 'Supply Chain Dominance', description: 'Own 50 of each rubber chain building', check: () => {
+		const rb = getAllRubberBuildings();
+		return Object.values(rb).every(v => v >= 50);
+	}},
+	{ id: 'shipping_armada', name: 'Shipping Armada', description: 'Build 25 shipping probes', check: () => game.shippingProbes.count >= 25 },
+	{ id: 'construction_swarm', name: 'Construction Swarm', description: 'Build 25 construction probes', check: () => game.constructionProbes.count >= 25 },
+	{ id: 'structure_foundry', name: 'Celestial Foundry', description: 'Own 10 total celestial structures', check: () => Object.values(game.celestialStructures).reduce((a, b) => a + b, 0) >= 10 },
+	{ id: 'structure_empire', name: 'Celestial Empire', description: 'Own 100 total celestial structures', check: () => Object.values(game.celestialStructures).reduce((a, b) => a + b, 0) >= 100 },
+	{ id: 'prestige_veteran', name: 'Veteran of Collapse', description: 'Perform 3 singularity resets', check: () => game.prestige.singularityCount >= 3 },
+	{ id: 'prestige_master', name: 'Master of Collapse', description: 'Perform 6 singularity resets', check: () => game.prestige.singularityCount >= 6 },
+	{ id: 'prestige_legend', name: 'Legend of Collapse', description: 'Perform 10 singularity resets', check: () => game.prestige.singularityCount >= 10 },
+	{ id: 'sp_collector', name: 'Singularity Investor', description: 'Accumulate 50 Singularity Points', check: () => game.prestige.singularityPoints >= 50 }
 ];
 
 // Initialize upgrades and achievements
