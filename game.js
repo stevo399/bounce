@@ -1379,23 +1379,36 @@ function performPrestigeReset() {
 }
 
 function triggerVictory() {
-	const overlay = document.getElementById('victory-overlay');
-	overlay.style.display = 'flex';
-	const stats = document.getElementById('victory-stats');
-	const totalTime = Math.floor((Date.now() - game.prestige.runStartTime) / 1000);
-	stats.innerHTML = '';
-	const lines = [
-		`Singularities completed: ${game.prestige.singularityCount}`,
-		`Total balls produced (all time): ${formatNumber(game.prestige.totalBallsAllTime + game.totalBalls)}`,
-		`Fastest singularity run: ${game.prestige.bestTime === Infinity ? 'N/A' : Math.floor(game.prestige.bestTime) + 's'}`,
-		`Singularity Points earned: ${game.prestige.singularityPoints}`
-	];
-	lines.forEach(line => {
-		const p = document.createElement('p');
-		p.textContent = line;
-		p.style.marginBottom = '8px';
-		stats.appendChild(p);
-	});
+	if (gameLoopInterval) clearInterval(gameLoopInterval);
+	if (saveInterval) clearInterval(saveInterval);
+	window.removeEventListener('beforeunload', saveGame);
+	document.body.innerHTML = '';
+	document.body.style.margin = '0';
+	document.body.style.minHeight = '100vh';
+	document.body.style.display = 'flex';
+	document.body.style.alignItems = 'center';
+	document.body.style.justifyContent = 'center';
+	document.body.style.background = 'var(--color-bg-primary)';
+	document.body.style.color = 'var(--color-text-primary)';
+	document.body.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+	const message = document.createElement('div');
+	message.style.textAlign = 'center';
+	message.style.maxWidth = '700px';
+	message.style.padding = '40px';
+	message.style.border = '2px solid var(--color-border)';
+	message.style.borderRadius = '16px';
+	message.style.background = 'var(--color-bg-secondary)';
+	const heading = document.createElement('h1');
+	heading.textContent = 'Colossal Singularity';
+	heading.style.color = 'var(--color-accent)';
+	heading.style.marginBottom = '20px';
+	const text = document.createElement('p');
+	text.textContent = 'time stands still... or perhaps doesn\'t exist anymore at all...';
+	text.style.fontSize = '1.2rem';
+	text.style.color = 'var(--color-text-secondary)';
+	message.appendChild(heading);
+	message.appendChild(text);
+	document.body.appendChild(message);
 }
 
 function enterSandboxMode() {
@@ -3736,11 +3749,14 @@ document.addEventListener('keydown', function(e) {
 // Load saved game before first render
 const wasLoaded = loadGame();
 
+let gameLoopInterval = null;
+let saveInterval = null;
+
 // Start game loop
-setInterval(gameLoop, 100);
+gameLoopInterval = setInterval(gameLoop, 100);
 
 // Auto-save every 10 seconds
-setInterval(saveGame, 10000);
+saveInterval = setInterval(saveGame, 10000);
 
 // Save on page close
 window.addEventListener('beforeunload', saveGame);
