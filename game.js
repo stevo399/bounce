@@ -3524,6 +3524,7 @@ function resetGame() {
 }
 
 async function compressToBase64(jsonStr) {
+	if (typeof CompressionStream === 'undefined') return null;
 	const bytes = new TextEncoder().encode(jsonStr);
 	const cs = new CompressionStream('deflate-raw');
 	const writer = cs.writable.getWriter();
@@ -3549,6 +3550,9 @@ async function compressToBase64(jsonStr) {
 }
 
 async function decompressFromBase64(b64) {
+	if (typeof DecompressionStream === 'undefined') {
+		throw new Error('decompression-unsupported');
+	}
 	const binary = atob(b64);
 	const bytes = new Uint8Array(binary.length);
 	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -3581,11 +3585,11 @@ async function exportSave() {
 	const textarea = document.getElementById('save-transfer-text');
 	if (container) container.style.display = '';
 	if (textarea) {
-		textarea.value = encoded;
+		textarea.value = encoded || data;
 		textarea.focus();
 		textarea.select();
 	}
-	announcePolite('Save exported. Copy the text to back it up.');
+	announcePolite(encoded ? 'Save exported. Copy the text to back it up.' : 'Save exported as raw JSON (compression not supported).');
 }
 
 async function importSave() {
@@ -3597,10 +3601,18 @@ async function importSave() {
 	}
 	let parsed;
 	try {
-		const json = await decompressFromBase64(raw);
-		parsed = JSON.parse(json);
+		if (raw.startsWith('{') || raw.startsWith('[')) {
+			parsed = JSON.parse(raw);
+		} else {
+			const json = await decompressFromBase64(raw);
+			parsed = JSON.parse(json);
+		}
 	} catch (e) {
-		announcePolite('Invalid save data (could not decode).');
+		if (raw.startsWith('{') || raw.startsWith('[')) {
+			announcePolite('Invalid save data (could not parse JSON).');
+		} else {
+			announcePolite('Invalid save data (could not decode).');
+		}
 		return;
 	}
 	if (!parsed || typeof parsed !== 'object' || parsed.totalBalls === undefined) {
