@@ -1050,6 +1050,7 @@ function loadGame() {
 			});
 		}
 		if (s.panelStates) game.panelStates = s.panelStates;
+		migratePlanetNames();
 
 		// Load seen state, or populate from current progress (migration)
 		if (s.seen) {
@@ -1136,12 +1137,87 @@ function renderPlanetSelector() {
 
 // Game loop
 // Planet name generation for discoveries
-const planetNameBases = ['Alpha Centauri', 'Proxima', 'Kepler', 'TRAPPIST', 'Gliese', 'Wolf', 'Barnard', 'Ross', 'Luyten', 'Tau Ceti', 'Epsilon Eridani', 'Sirius', 'Vega', 'Altair', 'Fomalhaut', 'Pollux', 'Arcturus', 'Aldebaran', 'Regulus', 'Betelgeuse'];
+const legacyPlanetNameBases = ['Alpha Centauri', 'Proxima', 'Kepler', 'TRAPPIST', 'Gliese', 'Wolf', 'Barnard', 'Ross', 'Luyten', 'Tau Ceti', 'Epsilon Eridani', 'Sirius', 'Vega', 'Altair', 'Fomalhaut', 'Pollux', 'Arcturus', 'Aldebaran', 'Regulus', 'Betelgeuse'];
+const planetNamePool = [
+	'Aurora Prime', 'Cinderfall', 'Dawnreach', 'Ember Hollow', 'Frostline', 'Galeheart', 'Harborlight', 'Ironveil',
+	'Juniper Ridge', 'Larkspur', 'Moonwell', 'Northwind', 'Obsidian Bay', 'Pinewatch', 'Quartz Point', 'Ravenrock',
+	'Sunspire', 'Tidebreak', 'Umber Coast', 'Valehaven', 'Westforge', 'Zephyr Plains', 'Ashenfield', 'Brightwater',
+	'Copper Sky', 'Deepmere', 'Evershore', 'Flint Harbor', 'Goldreach', 'Highgrove', 'Ivory Dunes', 'Jade Crossing',
+	'Kestrel Run', 'Lowtide', 'Mistwood', 'New Arcadia', 'Oakpoint', 'Port Meridian', 'Quiet Shoals', 'Redhaven',
+	'Stonewake', 'Thornfield', 'Unity', 'Verdant Reach', 'Whitecliff', 'Yarrow', 'Zenith', 'Argent Delta',
+	'Blue Mesa', 'Crimson Flats', 'Driftmark', 'Eastwatch', 'Fairwind', 'Graywater', 'Hollow Crown', 'Isleforge',
+	'Jetstream', 'Kingsfall', 'Longview', 'Mariner\'s Rest', 'Noble Arch', 'Old Harbor', 'Prospect', 'Ridgefall',
+	'Starfield', 'Timberline', 'Uplands', 'Vanguard', 'Windrest', 'Youngspire', 'Zero Point'
+];
+
+function toPlanetNameKey(name) {
+	return String(name || '').trim().toLowerCase();
+}
+
+function getUsedPlanetNames() {
+	const used = new Set();
+	game.planets.forEach(planet => used.add(toPlanetNameKey(planet.name)));
+	game.probes.discoveredPlanets.forEach(planet => used.add(toPlanetNameKey(planet.name)));
+	used.delete('');
+	return used;
+}
+
+function isLegacyPlanetName(name) {
+	const trimmed = String(name || '').trim();
+	if (!trimmed) return false;
+	return legacyPlanetNameBases.some(base => trimmed.startsWith(base + ' '));
+}
+
+function generateFallbackPlanetName(usedNames) {
+	let n = Math.max(2, game.planets.length + game.probes.discoveredPlanets.length + 1);
+	let candidate = `Frontier ${n}`;
+	while (usedNames.has(toPlanetNameKey(candidate))) {
+		n++;
+		candidate = `Frontier ${n}`;
+	}
+	return candidate;
+}
+
+function createUniquePlanetName(usedNames) {
+	const available = planetNamePool.filter(name => !usedNames.has(toPlanetNameKey(name)));
+	if (available.length > 0) {
+		return available[Math.floor(Math.random() * available.length)];
+	}
+	return generateFallbackPlanetName(usedNames);
+}
+
 function generatePlanetName() {
-	const idx = game.probes.discoveredPlanets.length + game.colonizationCount;
-	const base = planetNameBases[idx % planetNameBases.length];
-	const suffix = String.fromCharCode(98 + idx); // b, c, d...
-	return `${base} ${suffix}`;
+	const used = getUsedPlanetNames();
+	return createUniquePlanetName(used);
+}
+
+function migratePlanetNames() {
+	const used = new Set();
+
+	function migrateOne(entry) {
+		const original = String(entry.name || '').trim();
+		const originalKey = toPlanetNameKey(original);
+
+		// Keep Earth stable and keep custom/non-legacy names unless duplicated.
+		if (originalKey === 'earth' && !used.has(originalKey)) {
+			entry.name = 'Earth';
+			used.add('earth');
+			return;
+		}
+
+		let next = original;
+		let nextKey = originalKey;
+		if (!next || isLegacyPlanetName(next) || used.has(nextKey)) {
+			next = createUniquePlanetName(used);
+			nextKey = toPlanetNameKey(next);
+		}
+
+		entry.name = next;
+		used.add(nextKey);
+	}
+
+	game.planets.forEach(migrateOne);
+	game.probes.discoveredPlanets.forEach(migrateOne);
 }
 
 // Colonization milestones: 500K * 3^n
