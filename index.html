@@ -50,17 +50,24 @@
 					Click or press Space/Enter to manually collect balls. Manual bouncing works even without rubber!
 				</p>
 				<button class="btn btn-small" id="reset-btn" style="margin-top: 15px; background: var(--color-danger);" aria-label="Reset all game progress">Reset Game</button>
-				<div style="margin-top: 10px;">
-					<button class="btn btn-small" id="export-save-btn" aria-label="Export save data">Export Save</button>
-					<button class="btn btn-small" id="import-save-btn" aria-label="Import save data">Import Save</button>
-				</div>
-				<div id="save-transfer" style="display: none; margin-top: 10px;">
-					<label for="save-transfer-text" style="display: block; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 6px;">Save Data</label>
-					<textarea id="save-transfer-text" rows="4" style="width: 100%; padding: 8px 10px; background: var(--color-bg-tertiary); color: var(--color-text-primary); border: 2px solid var(--color-border); border-radius: 6px; resize: vertical;"></textarea>
-					<div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-						<button class="btn btn-small" id="confirm-import-btn">Confirm Import</button>
-						<button class="btn btn-small" id="hide-transfer-btn" style="background: var(--color-bg-tertiary); color: var(--color-text-primary);">Hide</button>
-					</div>
+			</div>
+		</div>
+
+		<div id="save-panel" class="section">
+			<h2>Save Data</h2>
+			<p style="color: var(--color-text-secondary); margin-bottom: 12px;">
+				Export your save to back it up, or import a save to continue on this device.
+			</p>
+			<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+				<button class="btn btn-small" id="export-save-btn" aria-label="Export save data">Export Save</button>
+				<button class="btn btn-small" id="import-save-btn" aria-label="Import save data">Import Save</button>
+			</div>
+			<div id="save-transfer" style="display: none; margin-top: 10px;">
+				<label for="save-transfer-text" style="display: block; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 6px;">Save Data</label>
+				<textarea id="save-transfer-text" rows="4" style="width: 100%; padding: 8px 10px; background: var(--color-bg-tertiary); color: var(--color-text-primary); border: 2px solid var(--color-border); border-radius: 6px; resize: vertical;"></textarea>
+				<div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+					<button class="btn btn-small" id="confirm-import-btn">Confirm Import</button>
+					<button class="btn btn-small" id="hide-transfer-btn" style="background: var(--color-bg-tertiary); color: var(--color-text-primary);">Hide</button>
 				</div>
 			</div>
 		</div>

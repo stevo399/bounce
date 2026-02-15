@@ -3792,6 +3792,7 @@ async function importSave() {
 // Collapsible panels
 function initCollapsiblePanels() {
 	const panels = [
+		{ id: 'save-panel', label: 'Save Data' },
 		{ id: 'rubber-panel', label: 'Rubber Supply Chain' },
 		{ id: 'production-panel', label: 'Ball Production Buildings' },
 		{ id: 'upgrades-panel', label: 'Upgrades' },
