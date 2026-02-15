@@ -1358,6 +1358,7 @@ const CELESTIAL_TIERS = [
 	{ name: 'Singularity', threshold: 1e37, key: null, resetKey: 'greatAttractors' }
 ];
 const SINGULARITIES_TO_WIN = 10;
+const PRESTIGE_BASE_SP = 10;
 
 function getCosmicMultiplier() {
 	const tierMult = Math.pow(2, game.cosmic.currentTier);
@@ -1409,13 +1410,18 @@ function checkCosmicTiers() {
 	}
 }
 
+function getPrestigeSpeedBonus(runTime, bestTime) {
+	if (!Number.isFinite(bestTime) || bestTime <= 0) return 0;
+	if (runTime >= bestTime) return 0;
+	const improvementRatio = bestTime / runTime;
+	// Small, optional speed incentive: +1 for any new best, +2 for major improvements.
+	return improvementRatio >= 1.5 ? 2 : 1;
+}
+
 function calculateSpPreview() {
 	const runTime = (Date.now() - game.prestige.runStartTime) / 1000;
-	let base = 1 + Math.floor(game.cosmic.currentTier / 2);
-	let speedBonus = 0;
-	if (runTime < game.prestige.bestTime) {
-		speedBonus = Math.min(10, Math.floor(game.prestige.bestTime / runTime));
-	}
+	let base = PRESTIGE_BASE_SP;
+	let speedBonus = getPrestigeSpeedBonus(runTime, game.prestige.bestTime);
 	return { base, speedBonus, total: base + speedBonus, runTime };
 }
 
@@ -1425,9 +1431,10 @@ function performPrestigeReset() {
 
 	// Calculate SP earned
 	const runTime = (Date.now() - game.prestige.runStartTime) / 1000;
-	let spEarned = 1 + Math.floor(game.cosmic.currentTier / 2);
+	let spEarned = PRESTIGE_BASE_SP;
+	const speedBonus = getPrestigeSpeedBonus(runTime, game.prestige.bestTime);
+	spEarned += speedBonus;
 	if (runTime < game.prestige.bestTime) {
-		spEarned += Math.min(10, Math.floor(game.prestige.bestTime / runTime));
 		game.prestige.bestTime = runTime;
 	} else if (game.prestige.bestTime === Infinity) {
 		game.prestige.bestTime = runTime;
@@ -3440,7 +3447,7 @@ function renderPrestige() {
 		previewText += `)`;
 		previewText += `\nRun time: ${runMins}m ${runSecs}s | Best: ${bestText}`;
 		if (preview.speedBonus === 0 && game.prestige.bestTime !== Infinity) {
-			previewText += ` | Beat your best time for bonus SP!`;
+			previewText += ` | Beat your best time for +1 SP (+2 for a major improvement).`;
 		}
 		spPreview.style.whiteSpace = 'pre-line';
 		spPreview.style.color = 'var(--color-warning)';
