@@ -386,6 +386,28 @@ function formatNumber(num) {
 	return trim(num.toFixed(2));
 }
 
+function formatDuration(seconds) {
+	const total = Math.max(0, Math.ceil(seconds));
+	const hours = Math.floor(total / 3600);
+	const minutes = Math.floor((total % 3600) / 60);
+	const secs = total % 60;
+	if (hours > 0) return `${hours} h ${minutes} m ${secs} s`;
+	if (minutes > 0) return `${minutes} m ${secs} s`;
+	return `${secs} s`;
+}
+
+function getBallPurchaseAvailabilityText(cost) {
+	if (game.balls >= cost) return 'purchasable now';
+	if (currentBps <= 0) return 'purchasable when production starts';
+	const etaSeconds = (cost - game.balls) / currentBps;
+	if (!Number.isFinite(etaSeconds) || etaSeconds < 0) return 'purchasable soon';
+	return `purchasable in ${formatDuration(etaSeconds)}`;
+}
+
+function buildBallPurchaseButtonLabel(name, cost) {
+	return `${name}, ${formatNumber(cost)} balls, ${getBallPurchaseAvailabilityText(cost)}`;
+}
+
 function getCost(baseCost, count, mult) {
 	// Softened cost curve: exponent grows slower at high building counts
 	// Capped at 100 so prices plateau (reached at ~200 buildings)
@@ -2277,9 +2299,10 @@ function renderRubberBuildings() {
 			btn.disabled = !canAfford;
 			let label;
 			if (atCap) {
-				label = `Cap reached (${cap})`;
+				label = `${data.name}, cap reached (${cap})`;
 			} else {
-				label = displayAmount > 1 ? `Buy ${displayAmount} for ${formatNumber(displayCost)} balls` : `Buy for ${formatNumber(displayCost)} balls`;
+				const purchaseName = displayAmount > 1 ? `${data.name} x${displayAmount}` : data.name;
+				label = buildBallPurchaseButtonLabel(purchaseName, displayCost);
 			}
 			btn.setAttribute('aria-label', `${label}. Currently owned: ${count}`);
 			btn.textContent = label;
@@ -2419,9 +2442,10 @@ function renderBallBuildings() {
 			btn.disabled = !canAfford;
 			let bLabel;
 			if (bAtCap) {
-				bLabel = `Cap reached (${ballCap})`;
+				bLabel = `${data.name}, cap reached (${ballCap})`;
 			} else {
-				bLabel = bDisplayAmount > 1 ? `Buy ${bDisplayAmount} for ${formatNumber(bDisplayCost)} balls` : `Buy for ${formatNumber(bDisplayCost)} balls`;
+				const purchaseName = bDisplayAmount > 1 ? `${data.name} x${bDisplayAmount}` : data.name;
+				bLabel = buildBallPurchaseButtonLabel(purchaseName, bDisplayCost);
 			}
 			btn.setAttribute('aria-label', `${bLabel}. Currently owned: ${count}`);
 			btn.textContent = bLabel;
@@ -2575,8 +2599,9 @@ function renderUpgrades() {
 			const btn = document.getElementById(`upgrade-btn-${key}`);
 			if (btn) {
 				btn.disabled = game.balls < data.cost;
-				btn.textContent = `Buy for ${formatNumber(data.cost)} balls`;
-				btn.setAttribute('aria-label', `Purchase ${data.name} for ${formatNumber(data.cost)} balls`);
+				const label = buildBallPurchaseButtonLabel(data.name, data.cost);
+				btn.textContent = label;
+				btn.setAttribute('aria-label', label);
 			}
 		}
 	});
@@ -2755,7 +2780,9 @@ function renderPlanets() {
 			const btn = document.createElement('button');
 			btn.className = 'btn';
 			btn.id = 'probe-launch-btn';
-			btn.textContent = 'Launch Von Neumann Probe (500K balls)';
+			const launchLabel = buildBallPurchaseButtonLabel('Launch Von Neumann Probe', 500000);
+			btn.textContent = launchLabel;
+			btn.setAttribute('aria-label', launchLabel);
 			btn.addEventListener('click', launchProbe);
 			btn.disabled = game.balls < 500000;
 			probeSection.appendChild(btn);
@@ -2882,7 +2909,12 @@ function renderPlanets() {
 
 	// Update launch button disabled state
 	const launchBtn = document.getElementById('probe-launch-btn');
-	if (launchBtn) launchBtn.disabled = game.balls < 500000;
+	if (launchBtn) {
+		const launchLabel = buildBallPurchaseButtonLabel('Launch Von Neumann Probe', 500000);
+		launchBtn.disabled = game.balls < 500000;
+		launchBtn.textContent = launchLabel;
+		launchBtn.setAttribute('aria-label', launchLabel);
+	}
 }
 
 function renderLogistics() {
@@ -2989,7 +3021,9 @@ function renderLogistics() {
 	const shipBtn = document.getElementById('buy-shipping-btn');
 	if (shipBtn) {
 		shipBtn.disabled = game.balls < shipCost;
-		shipBtn.textContent = `Buy Shipping Probe (${formatNumber(shipCost)} balls)`;
+		const shipLabel = buildBallPurchaseButtonLabel('Shipping Probe', shipCost);
+		shipBtn.textContent = shipLabel;
+		shipBtn.setAttribute('aria-label', shipLabel);
 	}
 
 	const accelFactor = eff.buildAccel ? Math.max(0.1, Math.pow(0.99, game.constructionProbes.totalBuilt)) : 1;
@@ -3107,7 +3141,9 @@ function renderLogistics() {
 	const conBtn = document.getElementById('buy-construction-btn');
 	if (conBtn) {
 		conBtn.disabled = game.balls < conCost;
-		conBtn.textContent = `Buy Construction Probe (${formatNumber(conCost)} balls)`;
+		const conLabel = buildBallPurchaseButtonLabel('Construction Probe', conCost);
+		conBtn.textContent = conLabel;
+		conBtn.setAttribute('aria-label', conLabel);
 	}
 }
 
@@ -3228,7 +3264,10 @@ function renderCosmic() {
 				if (buyBtn) {
 					const amt = buyAmount === 'max' ? Math.max(1, getMaxAffordable(data.baseCost, count, data.costMult, game.balls).count) : (buyAmount === 10 ? 10 : 1);
 					const bulkCost = buyAmount === 'max' ? getBulkCost(data.baseCost, count, data.costMult, amt) : (amt > 1 ? getBulkCost(data.baseCost, count, data.costMult, amt) : cost);
-					buyBtn.textContent = `Buy ${amt > 1 ? amt + ' ' : ''}(${formatNumber(bulkCost)})`;
+					const purchaseName = amt > 1 ? `${data.name} x${amt}` : data.name;
+					const celestialLabel = buildBallPurchaseButtonLabel(purchaseName, bulkCost);
+					buyBtn.textContent = celestialLabel;
+					buyBtn.setAttribute('aria-label', celestialLabel);
 					buyBtn.disabled = game.balls < bulkCost;
 				}
 			} else if (row && !unlocked) {
