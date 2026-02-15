@@ -3672,9 +3672,17 @@ async function importSave() {
 		return;
 	}
 	if (!confirm('Import this save? This will overwrite your current progress.')) return;
-	localStorage.setItem('bouncingBallUniverse', JSON.stringify(parsed));
-	window.removeEventListener('beforeunload', saveGame);
-	location.reload();
+	try {
+		// Prevent autosave/beforeunload from rewriting imported data before reload.
+		resetting = true;
+		localStorage.setItem('bouncingBallUniverse', JSON.stringify(parsed));
+		window.removeEventListener('beforeunload', saveGame);
+		location.reload();
+	} catch (e) {
+		resetting = false;
+		console.error('Failed to import save:', e);
+		announcePolite('Import failed while writing save data.');
+	}
 }
 
 // Collapsible panels
