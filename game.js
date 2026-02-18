@@ -429,7 +429,7 @@ function formatDuration(seconds) {
 
 function getBallPurchaseAvailabilityText(cost) {
 	if (game.balls >= cost) return 'purchasable now';
-	if (currentBps <= 0) return 'purchasable when production starts';
+	if (currentBps <= 0) return 'No estimation available';
 	const etaSeconds = (cost - game.balls) / currentBps;
 	if (!Number.isFinite(etaSeconds) || etaSeconds < 0) return 'purchasable soon';
 	return `purchasable in ${formatDuration(etaSeconds)}`;
@@ -679,7 +679,12 @@ function buyUpgrade(upgradeKey) {
 			btn.textContent = 'Purchased!';
 			btn.style.background = 'var(--color-success)';
 		}
-		announcePolite(`Upgrade unlocked: ${data.name}. ${data.description}`);
+		let announceDesc = data.description;
+		if (data.effect && data.effect.type === 'clickAdd') {
+			const pe = getPrestigeEffects();
+			announceDesc = `+${Math.floor(data.effect.value * pe.clickMult)} per click`;
+		}
+		announcePolite(`Upgrade unlocked: ${data.name}. ${announceDesc}`);
 		setTimeout(() => { updateDisplay(true); checkAchievements(); }, 400);
 	} else if (upgrade.purchased) {
 		announcePolite('Upgrade already purchased');
