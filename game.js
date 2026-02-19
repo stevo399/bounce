@@ -43,7 +43,7 @@ const game = {
 		bestTime: Infinity,
 		totalBallsAllTime: 0,
 		runStartTime: Date.now(),
-		upgrades: { production: 0, efficiency: 0, logistics: 0, discovery: 0, cosmic: 0 }
+		upgrades: { production: 0, efficiency: 0, logistics: 0, discovery: 0, cosmic: 0, clicking: 0 }
 	},
 	sandbox: false,
 
@@ -311,7 +311,10 @@ const prestigeUpgrades = [
 	['prestige_disc1', 'Deja Vu I', 'Von Neumann travel time halved', 3, { type: 'prestigeTravel', value: 0.5 }],
 	['prestige_disc2', 'Deja Vu II', 'Von Neumann travel time halved again', 8, { type: 'prestigeTravel', value: 0.5 }],
 	['prestige_cosm1', 'Compressed Spacetime I', 'Cosmic tier thresholds -25%', 5, { type: 'prestigeCosmic', value: 0.75 }],
-	['prestige_cosm2', 'Compressed Spacetime II', 'Cosmic tier thresholds -50%', 12, { type: 'prestigeCosmic', value: 0.667 }]
+	['prestige_cosm2', 'Compressed Spacetime II', 'Cosmic tier thresholds -50%', 12, { type: 'prestigeCosmic', value: 0.667 }],
+	['prestige_click1', 'Muscle Memory I', 'Click power +50%', 3, { type: 'prestigeClick', value: 0.5 }],
+	['prestige_click2', 'Muscle Memory II', 'Click power +100%', 8, { type: 'prestigeClick', value: 0.5 }],
+	['prestige_click3', 'Muscle Memory III', 'Click power +200%', 15, { type: 'prestigeClick', value: 1.0 }]
 ];
 prestigeUpgrades.forEach(([key, name, desc, spCost, effect]) => {
 	upgradeData[key] = { name, description: desc, cost: spCost, currency: 'sp', category: 'Prestige',
@@ -426,7 +429,7 @@ function formatDuration(seconds) {
 
 function getBallPurchaseAvailabilityText(cost) {
 	if (game.balls >= cost) return 'purchasable now';
-	if (currentBps <= 0) return 'purchasable when production starts';
+	if (currentBps <= 0) return 'No estimation available';
 	const etaSeconds = (cost - game.balls) / currentBps;
 	if (!Number.isFinite(etaSeconds) || etaSeconds < 0) return 'purchasable soon';
 	return `purchasable in ${formatDuration(etaSeconds)}`;
@@ -527,7 +530,8 @@ function hasCompleteSupplyChain() {
 // Core game functions
 function collectBalls() {
 	const eff = getEffects();
-	const amount = (1 + eff.clickAdd) * eff.cosmicClickMult;
+	const pe = getPrestigeEffects();
+	const amount = (1 + eff.clickAdd) * eff.cosmicClickMult * pe.clickMult;
 	game.balls += amount;
 	game.totalBalls += amount;
 	updateDisplay();
@@ -675,7 +679,12 @@ function buyUpgrade(upgradeKey) {
 			btn.textContent = 'Purchased!';
 			btn.style.background = 'var(--color-success)';
 		}
-		announcePolite(`Upgrade unlocked: ${data.name}. ${data.description}`);
+		let announceDesc = data.description;
+		if (data.effect && data.effect.type === 'clickAdd') {
+			const pe = getPrestigeEffects();
+			announceDesc = `+${Math.floor(data.effect.value * pe.clickMult)} per click`;
+		}
+		announcePolite(`Upgrade unlocked: ${data.name}. ${announceDesc}`);
 		setTimeout(() => { updateDisplay(true); checkAchievements(); }, 400);
 	} else if (upgrade.purchased) {
 		announcePolite('Upgrade already purchased');
@@ -1079,7 +1088,8 @@ function loadGame() {
 		}
 		if (s.prestige) {
 			Object.assign(game.prestige, s.prestige);
-			if (!game.prestige.upgrades) game.prestige.upgrades = { production: 0, efficiency: 0, logistics: 0, discovery: 0, cosmic: 0 };
+			if (!game.prestige.upgrades) game.prestige.upgrades = { production: 0, efficiency: 0, logistics: 0, discovery: 0, cosmic: 0, clicking: 0 };
+			if (game.prestige.upgrades.clicking === undefined) game.prestige.upgrades.clicking = 0;
 			if (!game.prestige.runStartTime) game.prestige.runStartTime = Date.now();
 			if (!Number.isFinite(game.prestige.bestTime) || game.prestige.bestTime <= 0) {
 				game.prestige.bestTime = Infinity;
@@ -1571,7 +1581,7 @@ function enterSandboxMode() {
 }
 
 function buyPrestigeUpgrade(branch) {
-	const costs = { production: [1,2,4,8,15], efficiency: [2,5,10], logistics: [1,3,7], discovery: [3,8], cosmic: [5,12] };
+	const costs = { production: [1,2,4,8,15], efficiency: [2,5,10], logistics: [1,3,7], discovery: [3,8], cosmic: [5,12], clicking: [3,8,15] };
 	const level = game.prestige.upgrades[branch];
 	const branchCosts = costs[branch];
 	if (level >= branchCosts.length) return;
@@ -1609,7 +1619,11 @@ function getPrestigeEffects() {
 	if (p.cosmic >= 1) cosmicThresholdMult *= 0.75;
 	if (p.cosmic >= 2) cosmicThresholdMult *= 0.667;
 
-	return { prodMult, costScaleReduction, freeShipping, travelMult, cosmicThresholdMult };
+	const clickBonuses = [0.5, 0.5, 1.0];
+	let clickMult = 1;
+	for (let i = 0; i < p.clicking; i++) clickMult += clickBonuses[i];
+
+	return { prodMult, costScaleReduction, freeShipping, travelMult, cosmicThresholdMult, clickMult };
 }
 
 function buyShippingProbe() {
@@ -2115,7 +2129,8 @@ function updateDisplay(forceFull) {
 	lastFastUi = now;
 
 	const eff = getEffects();
-	const clickAmount = Math.floor((1 + eff.clickAdd) * eff.cosmicClickMult);
+	const pe = getPrestigeEffects();
+	const clickAmount = Math.floor((1 + eff.clickAdd) * eff.cosmicClickMult * pe.clickMult);
 	const collectBtn = document.getElementById('collect-btn');
 	const clickLabel = `Bounce to collect ${formatNumber(clickAmount)} ball${clickAmount === 1 ? '' : 's'} manually`;
 	collectBtn.textContent = `🎾 ${clickLabel}`;
@@ -2696,6 +2711,7 @@ function renderUpgrades() {
 
 			const desc = document.createElement('p');
 			desc.className = 'item-description';
+			desc.id = `upgrade-desc-${key}`;
 			desc.textContent = data.description;
 			div.appendChild(desc);
 
@@ -2742,6 +2758,14 @@ function renderUpgrades() {
 				const label = buildBallPurchaseButtonLabel(data.name, data.cost);
 				btn.textContent = label;
 				btn.setAttribute('aria-label', label);
+			}
+			if (data.effect && data.effect.type === 'clickAdd') {
+				const descEl = document.getElementById(`upgrade-desc-${key}`);
+				if (descEl) {
+					const pe = getPrestigeEffects();
+					const effective = Math.floor(data.effect.value * pe.clickMult);
+					descEl.textContent = `+${effective} per click`;
+				}
 			}
 		}
 	});
@@ -3535,7 +3559,8 @@ function renderPrestige() {
 		{ key: 'efficiency', name: 'Efficiency', desc: ['Cost 1.15x\u21921.13x', '\u21921.11x', '\u21921.09x'], costs: [2,5,10] },
 		{ key: 'logistics', name: 'Logistics', desc: ['Start +1 ship probe', '+3 probes', '+10 probes'], costs: [1,3,7] },
 		{ key: 'discovery', name: 'Discovery', desc: ['Travel time /2', 'Travel time /4'], costs: [3,8] },
-		{ key: 'cosmic', name: 'Cosmic', desc: ['Thresholds -25%', '-50%'], costs: [5,12] }
+		{ key: 'cosmic', name: 'Cosmic', desc: ['Thresholds -25%', '-50%'], costs: [5,12] },
+		{ key: 'clicking', name: 'Clicking', desc: ['Click power +50%', '+100%', '+200%'], costs: [3,8,15] }
 	];
 
 	// Build tree once
