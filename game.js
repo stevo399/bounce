@@ -200,9 +200,10 @@ const planetPrepUpgrades = [
 	['prep3', 'Orbital Telescope', 'You can see other worlds now', 350000, 350000, { type: 'rubberMult', value: 1.15 }],
 	['prep4', 'Probe Blueprints', 'Unlocks Von Neumann probe launch', 500000, 500000, { type: 'ballMult', value: 1.15 }]
 ];
-planetPrepUpgrades.forEach(([key, name, desc, cost, unlockBalls, effect]) => {
+planetPrepUpgrades.forEach(([key, name, desc, cost, unlockBalls, effect], index) => {
+	const prevKey = index > 0 ? planetPrepUpgrades[index - 1][0] : null;
 	upgradeData[key] = { name, description: desc, cost, category: 'Discovery',
-		unlock: () => game.totalBalls >= unlockBalls, effect };
+		unlock: () => game.totalBalls >= unlockBalls && (!prevKey || (game.upgrades[prevKey] && game.upgrades[prevKey].purchased)), effect };
 });
 
 // --- Shipping Fleet (5) - hidden until shipping system exists ---
