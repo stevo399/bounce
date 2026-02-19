@@ -154,18 +154,18 @@
 			<div id="achievements-container"></div>
 		</div>
 
-		<div id="victory-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;">
-			<div style="background: var(--color-bg-secondary); border: 3px solid var(--color-accent); border-radius: 16px; padding: 40px; max-width: 600px; text-align: center;">
-				<h1 style="color: var(--color-accent); margin-bottom: 20px;">Colossal Singularity</h1>
-				<p style="color: var(--color-text-primary); font-size: 1.2rem; margin-bottom: 20px;">All singularities have merged. The universe is reborn.</p>
-				<div id="victory-stats" style="text-align: left; margin-bottom: 20px; color: var(--color-text-secondary);"></div>
-				<button class="btn" id="sandbox-btn">Continue in Sandbox Mode</button>
-			</div>
-		</div>
-
 		<div id="toast-container" role="log" aria-live="polite" aria-label="Notifications"></div>
 		<div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true" id="polite-announcements"></div>
 		<div class="visually-hidden" role="alert" aria-live="assertive" aria-atomic="true" id="assertive-announcements"></div>
+	</div>
+
+	<div id="victory-page" style="display: none; min-height: 100vh; align-items: center; justify-content: center; background: var(--color-bg-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+		<div style="background: var(--color-bg-secondary); border: 3px solid var(--color-accent); border-radius: 16px; padding: 40px; max-width: 600px; text-align: center;">
+			<h1 style="color: var(--color-accent); margin-bottom: 20px;">Colossal Singularity</h1>
+			<p style="color: var(--color-text-primary); font-size: 1.2rem; margin-bottom: 20px;">As reality is wiped and rebuilt around you, you get an unmistakable feeling of deja vu. The cycle never ends. Ever.</p>
+			<div id="victory-stats" style="text-align: left; margin-bottom: 20px; color: var(--color-text-secondary);"></div>
+			<button class="btn" id="sandbox-btn">Continue Playing</button>
+		</div>
 	</div>
 
 	<script src="game.js"></script>
