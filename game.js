@@ -1457,8 +1457,6 @@ function calculateSpPreview() {
 
 function performPrestigeReset() {
 	if (game.cosmic.currentTier < CELESTIAL_TIERS.length) return;
-	if (game.sandbox) return;
-
 	// Calculate SP earned
 	const runTime = (Date.now() - game.prestige.runStartTime) / 1000;
 	let spEarned = PRESTIGE_BASE_SP;
@@ -1477,10 +1475,9 @@ function performPrestigeReset() {
 
 	showToast(`Universe Collapsed!`, `+${spEarned} Singularity Points. Total: ${game.prestige.singularityPoints} SP`);
 
-	// Check win condition
-	if (game.prestige.singularityCount >= SINGULARITIES_TO_WIN) {
+	// Check win condition — show victory celebration on the winning singularity, but don't end the game
+	if (game.prestige.singularityCount === SINGULARITIES_TO_WIN) {
 		triggerVictory();
-		return;
 	}
 
 	// Reset everything except prestige tree and achievements
@@ -1542,42 +1539,27 @@ function performPrestigeReset() {
 }
 
 function triggerVictory() {
-	if (gameLoopInterval) clearInterval(gameLoopInterval);
-	if (saveInterval) clearInterval(saveInterval);
-	window.removeEventListener('beforeunload', saveGame);
-	document.body.innerHTML = '';
-	document.body.style.margin = '0';
-	document.body.style.minHeight = '100vh';
-	document.body.style.display = 'flex';
-	document.body.style.alignItems = 'center';
-	document.body.style.justifyContent = 'center';
-	document.body.style.background = 'var(--color-bg-primary)';
-	document.body.style.color = 'var(--color-text-primary)';
-	document.body.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-	const message = document.createElement('div');
-	message.style.textAlign = 'center';
-	message.style.maxWidth = '700px';
-	message.style.padding = '40px';
-	message.style.border = '2px solid var(--color-border)';
-	message.style.borderRadius = '16px';
-	message.style.background = 'var(--color-bg-secondary)';
-	const heading = document.createElement('h1');
-	heading.textContent = 'Colossal Singularity';
-	heading.style.color = 'var(--color-accent)';
-	heading.style.marginBottom = '20px';
-	const text = document.createElement('p');
-	text.textContent = 'time stands still... or perhaps doesn\'t exist anymore at all...';
-	text.style.fontSize = '1.2rem';
-	text.style.color = 'var(--color-text-secondary)';
-	message.appendChild(heading);
-	message.appendChild(text);
-	document.body.appendChild(message);
+	const victoryPage = document.getElementById('victory-page');
+	if (!victoryPage) return;
+	const statsEl = document.getElementById('victory-stats');
+	if (statsEl) {
+		const runTime = game.prestige.bestTime === Infinity ? 'N/A' : formatDuration(game.prestige.bestTime);
+		statsEl.innerHTML =
+			`<p><strong>Singularities:</strong> ${game.prestige.singularityCount}</p>` +
+			`<p><strong>Singularity Points:</strong> ${game.prestige.singularityPoints} SP</p>` +
+			`<p><strong>Best Run:</strong> ${runTime}</p>` +
+			`<p><strong>Total Balls (all time):</strong> ${formatNumber(game.prestige.totalBallsAllTime)}</p>`;
+	}
+	document.querySelector('.container').style.display = 'none';
+	victoryPage.style.display = 'flex';
+	const continueBtn = document.getElementById('sandbox-btn');
+	if (continueBtn) continueBtn.focus();
 }
 
 function enterSandboxMode() {
-	game.sandbox = true;
-	document.getElementById('victory-overlay').style.display = 'none';
-	showToast('Sandbox Mode', 'Keep playing with all your prestige bonuses. No more win triggers.');
+	document.getElementById('victory-page').style.display = 'none';
+	document.querySelector('.container').style.display = '';
+	showToast('Congratulations!', 'You achieved the Colossal Singularity! The universe is yours to keep playing.');
 	saveGame();
 }
 
@@ -3483,7 +3465,7 @@ function renderPrestige() {
 		container.appendChild(treeDiv);
 	}
 
-	const showCollapse = game.cosmic.currentTier >= CELESTIAL_TIERS.length && !game.sandbox;
+	const showCollapse = game.cosmic.currentTier >= CELESTIAL_TIERS.length;
 	let spPreview = document.getElementById('sp-preview');
 	let collapseBtn = document.getElementById('collapse-btn');
 	if (showCollapse) {
@@ -3546,7 +3528,13 @@ function renderPrestige() {
 	}
 
 	const progressLabel = document.getElementById('singularity-progress');
-	if (progressLabel) progressLabel.textContent = `Colossal Singularity: ${game.prestige.singularityCount} / ${SINGULARITIES_TO_WIN}`;
+	if (progressLabel) {
+		if (game.prestige.singularityCount >= SINGULARITIES_TO_WIN) {
+			progressLabel.textContent = 'Colossal Singularity: Completed';
+		} else {
+			progressLabel.textContent = `Colossal Singularity: ${game.prestige.singularityCount} / ${SINGULARITIES_TO_WIN}`;
+		}
+	}
 
 	const progressFill = document.getElementById('singularity-progress-fill');
 	if (progressFill) progressFill.style.width = `${Math.min(100, (game.prestige.singularityCount / SINGULARITIES_TO_WIN) * 100)}%`;
