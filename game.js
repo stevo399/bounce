@@ -43,6 +43,8 @@ const game = {
 		bestTime: Infinity,
 		totalBallsAllTime: 0,
 		runStartTime: Date.now(),
+		runElapsed: 0,
+		firstBounce: false,
 		upgrades: { production: 0, efficiency: 0, logistics: 0, discovery: 0, cosmic: 0, clicking: 0 }
 	},
 	sandbox: false,
