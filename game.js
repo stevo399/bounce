@@ -1105,6 +1105,15 @@ function loadGame() {
 			if (!Number.isFinite(game.prestige.bestTime) || game.prestige.bestTime <= 0) {
 				game.prestige.bestTime = Infinity;
 			}
+			// Migrate saves that lack the accumulated timer fields
+			if (game.prestige.runElapsed === undefined) {
+				// Estimate elapsed from wall-clock as a one-time migration
+				game.prestige.runElapsed = Math.max(0, (Date.now() - game.prestige.runStartTime) / 1000);
+			}
+			if (game.prestige.firstBounce === undefined) {
+				// Assume the player has already bounced if they have any total balls
+				game.prestige.firstBounce = game.totalBalls > 0;
+			}
 		}
 		if (s.sandbox) game.sandbox = true;
 		if (s.upgrades) {
