@@ -397,6 +397,7 @@ let shippingPerPlanet = [];
 let buyAmount = 1; // 1, 10, or 'max'
 let upgradeTabFilter = 'All';
 let achievementTabFilter = 'All';
+let tabVisible = !document.hidden;
 
 // Utility functions
 function formatNumber(num) {
@@ -1961,6 +1962,10 @@ function gameLoop() {
 		const dt = Math.min(elapsed, 0.1);
 		elapsed -= dt;
 		gameTick(dt);
+		// Accumulate iteration timer only while tab is visible and first bounce happened
+		if (tabVisible && game.prestige.firstBounce) {
+			game.prestige.runElapsed += dt;
+		}
 	}
 	updateDisplay();
 	// Throttle milestone/achievement checks to once per second
@@ -3952,6 +3957,10 @@ document.addEventListener('keydown', function(e) {
 		e.preventDefault();
 		collectBalls();
 	}
+});
+
+document.addEventListener('visibilitychange', function() {
+	tabVisible = !document.hidden;
 });
 
 // Load saved game before first render
