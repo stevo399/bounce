@@ -3987,6 +3987,27 @@ document.addEventListener('keydown', function(e) {
 		e.preventDefault();
 		collectBalls();
 	}
+	if (e.key === 't' && e.target === document.body) {
+		// Announce iteration timer for accessibility / quick check
+		if (!game.seen['prestige_panel']) return;
+		let msg;
+		if (!game.prestige.firstBounce) {
+			msg = 'Iteration timer: waiting for first bounce.';
+		} else {
+			msg = 'Iteration time: ' + formatDuration(game.prestige.runElapsed);
+			if (Number.isFinite(game.prestige.bestTime) && game.prestige.bestTime > 0) {
+				const diff = game.prestige.runElapsed - game.prestige.bestTime;
+				if (diff < 0) {
+					msg += '. Ahead of best by ' + formatDuration(Math.abs(diff));
+				} else if (diff > 0) {
+					msg += '. Behind best by ' + formatDuration(diff);
+				} else {
+					msg += '. Matching best time';
+				}
+			}
+		}
+		announcePolite(msg);
+	}
 });
 
 document.addEventListener('visibilitychange', function() {
