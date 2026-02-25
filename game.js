@@ -1468,7 +1468,7 @@ function getPrestigeSpeedBonus(runTime, bestTime) {
 }
 
 function calculateSpPreview() {
-	const runTime = (Date.now() - game.prestige.runStartTime) / 1000;
+	const runTime = game.prestige.runElapsed;
 	let base = PRESTIGE_BASE_SP;
 	let speedBonus = getPrestigeSpeedBonus(runTime, game.prestige.bestTime);
 	return { base, speedBonus, total: base + speedBonus, runTime };
@@ -1477,7 +1477,7 @@ function calculateSpPreview() {
 function performPrestigeReset() {
 	if (game.cosmic.currentTier < CELESTIAL_TIERS.length) return;
 	// Calculate SP earned
-	const runTime = (Date.now() - game.prestige.runStartTime) / 1000;
+	const runTime = game.prestige.runElapsed;
 	let spEarned = PRESTIGE_BASE_SP;
 	const speedBonus = getPrestigeSpeedBonus(runTime, game.prestige.bestTime);
 	spEarned += speedBonus;
@@ -1491,6 +1491,8 @@ function performPrestigeReset() {
 	game.prestige.singularityPoints += spEarned;
 	game.prestige.totalBallsAllTime += game.totalBalls;
 	game.prestige.runStartTime = Date.now();
+	game.prestige.runElapsed = 0;
+	game.prestige.firstBounce = false;
 
 	showToast(`Universe Collapsed!`, `+${spEarned} Singularity Points. Total: ${game.prestige.singularityPoints} SP`);
 
