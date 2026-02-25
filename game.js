@@ -915,7 +915,7 @@ const milestones = [
 	{ id: 'celestial_star', test: () => game.cosmic.currentTier >= 3, title: 'Stellar Genesis!', desc: 'Your bouncy star illuminates the cosmos!' },
 	{ id: 'celestial_blackhole', test: () => game.cosmic.currentTier >= 5, title: 'Event Horizon!', desc: 'A bouncy black hole bends spacetime!' },
 	{ id: 'celestial_galaxy', test: () => game.cosmic.currentTier >= 7, title: 'Galactic Formation!', desc: 'A bouncy galaxy spirals into existence!' },
-	{ id: 'prestige_panel', test: () => game.prestige.singularityCount > 0 || game.cosmic.currentTier >= 9, title: 'Singularity!', desc: 'Collapse the universe for ultimate power.', show: ['#prestige-panel'] }
+	{ id: 'prestige_panel', test: () => game.prestige.singularityCount > 0 || game.cosmic.currentTier >= 9, title: 'Singularity!', desc: 'Collapse the universe for ultimate power.', show: ['#prestige-panel', '#stat-timer'] }
 ];
 
 const progressionStages = [
@@ -1535,7 +1535,7 @@ function performPrestigeReset() {
 	game.seen = {};
 	['#rubber-panel', '#production-panel', '#upgrades-panel', '#planets-panel',
 	 '#logistics-panel', '#cosmic-panel', '#prestige-panel',
-	 '#stat-bps', '#stat-rubber', '#stat-rps', '#stat-planets'].forEach(sel => {
+	 '#stat-bps', '#stat-rubber', '#stat-rps', '#stat-planets', '#stat-timer'].forEach(sel => {
 		const el = document.querySelector(sel);
 		if (el) el.style.display = 'none';
 	});
@@ -2204,6 +2204,22 @@ function updateDisplay(forceFull) {
 	updateStatRowA11y('stat-planets', 'Total Planets', `${game.planets.length} colonized` +
 		(game.probes.discoveredPlanets.length > 0 ? ` / ${game.probes.discoveredPlanets.length} discovered` : '') +
 		synergyText + empireText);
+
+	// Iteration timer display
+	const timerDisplay = document.getElementById('timer-display');
+	if (timerDisplay) {
+		if (!game.prestige.firstBounce) {
+			timerDisplay.textContent = 'waiting for first bounce';
+		} else {
+			let timerText = formatDuration(game.prestige.runElapsed);
+			if (Number.isFinite(game.prestige.bestTime) && game.prestige.bestTime > 0) {
+				timerText += ` (best: ${formatDuration(game.prestige.bestTime)})`;
+			}
+			timerDisplay.textContent = timerText;
+		}
+		updateStatRowA11y('stat-timer', 'Iteration Time', timerDisplay.textContent);
+	}
+
 	const hasRubberWorld = game.planets.some(planet => planet.role === 'rubber');
 	const hasBallWorld = game.planets.some(planet => planet.role === 'ball');
 	const hasHybridWorld = game.planets.some(planet => planet.role === 'hybrid');
