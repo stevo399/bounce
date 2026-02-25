@@ -532,6 +532,10 @@ function hasCompleteSupplyChain() {
 
 // Core game functions
 function collectBalls() {
+	if (!game.prestige.firstBounce) {
+		game.prestige.firstBounce = true;
+		game.prestige.runStartTime = Date.now();
+	}
 	const eff = getEffects();
 	const pe = getPrestigeEffects();
 	const amount = (1 + eff.clickAdd) * eff.cosmicClickMult * pe.clickMult;
