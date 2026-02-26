@@ -473,15 +473,14 @@ function getMaxAffordable(baseCost, currentCount, mult, budget) {
 
 function announcePolite(message) {
 	const elem = document.getElementById('polite-announcements');
-	// Clear first so screen readers detect a change even if the message
-	// is identical to the previous announcement (e.g. pressing 't' twice).
-	elem.textContent = '';
-	setTimeout(() => { elem.textContent = message; }, 80);
+	elem.textContent = message;
 }
 
 function announceAssertive(message) {
 	const elem = document.getElementById('assertive-announcements');
-	elem.textContent = message;
+	// Clear first so screen readers re-announce even if the text is the same.
+	elem.textContent = '';
+	setTimeout(() => { elem.textContent = message; }, 80);
 }
 
 function updateStatRowA11y(rowId, label, valueText) {
@@ -4006,7 +4005,7 @@ document.addEventListener('keydown', function(e) {
 				}
 			}
 		}
-		announcePolite(msg);
+		announceAssertive(msg);
 	}
 });
 
