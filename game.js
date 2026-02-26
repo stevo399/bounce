@@ -476,13 +476,20 @@ function announcePolite(message) {
 	elem.textContent = message;
 }
 
-let _assertiveToggle = false;
+let _assertiveTimer = null;
 function announceAssertive(message) {
-	const elem = document.getElementById('assertive-announcements');
-	// Toggle a trailing zero-width space so the string is never identical to
-	// the previous one — NVDA skips truly duplicate live-region updates.
-	_assertiveToggle = !_assertiveToggle;
-	elem.textContent = _assertiveToggle ? message + '\u200B' : message;
+	// Insert a fresh role="alert" element each time.  NVDA always announces
+	// newly-inserted alert elements regardless of virtual-cursor position,
+	// unlike updating textContent on a persistent live region.
+	const container = document.getElementById('assertive-announcements');
+	if (_assertiveTimer) clearTimeout(_assertiveTimer);
+	container.textContent = '';
+	const node = document.createElement('span');
+	node.setAttribute('role', 'alert');
+	node.textContent = message;
+	container.appendChild(node);
+	// Clean up after 5 s so the DOM doesn't grow forever
+	_assertiveTimer = setTimeout(() => { container.textContent = ''; }, 5000);
 }
 
 function updateStatRowA11y(rowId, label, valueText) {
