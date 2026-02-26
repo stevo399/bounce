@@ -476,11 +476,13 @@ function announcePolite(message) {
 	elem.textContent = message;
 }
 
+let _assertiveToggle = false;
 function announceAssertive(message) {
 	const elem = document.getElementById('assertive-announcements');
-	// Clear first so screen readers re-announce even if the text is the same.
-	elem.textContent = '';
-	setTimeout(() => { elem.textContent = message; }, 80);
+	// Toggle a trailing zero-width space so the string is never identical to
+	// the previous one — NVDA skips truly duplicate live-region updates.
+	_assertiveToggle = !_assertiveToggle;
+	elem.textContent = _assertiveToggle ? message + '\u200B' : message;
 }
 
 function updateStatRowA11y(rowId, label, valueText) {
