@@ -485,7 +485,6 @@ function announceAssertive(message) {
 	if (_assertiveTimer) clearTimeout(_assertiveTimer);
 	container.textContent = '';
 	const node = document.createElement('span');
-	node.setAttribute('role', 'alert');
 	node.textContent = message;
 	container.appendChild(node);
 	// Clean up after 5 s so the DOM doesn't grow forever
