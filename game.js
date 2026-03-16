@@ -43,6 +43,8 @@ const game = {
 		bestTime: Infinity,
 		totalBallsAllTime: 0,
 		runStartTime: Date.now(),
+		runElapsed: 0,
+		firstBounce: false,
 		upgrades: { production: 0, efficiency: 0, logistics: 0, discovery: 0, cosmic: 0, clicking: 0 }
 	},
 	sandbox: false,
@@ -395,6 +397,7 @@ let shippingPerPlanet = [];
 let buyAmount = 1; // 1, 10, or 'max'
 let upgradeTabFilter = 'All';
 let achievementTabFilter = 'All';
+let tabVisible = !document.hidden;
 
 // Utility functions
 function formatNumber(num) {
@@ -473,9 +476,20 @@ function announcePolite(message) {
 	elem.textContent = message;
 }
 
+let _assertiveTimer = null;
 function announceAssertive(message) {
-	const elem = document.getElementById('assertive-announcements');
-	elem.textContent = message;
+	// Insert a fresh role="alert" element each time.  NVDA always announces
+	// newly-inserted alert elements regardless of virtual-cursor position,
+	// unlike updating textContent on a persistent live region.
+	const container = document.getElementById('assertive-announcements');
+	if (_assertiveTimer) clearTimeout(_assertiveTimer);
+	container.textContent = '';
+	const node = document.createElement('span');
+	node.setAttribute('role', 'alert');
+	node.textContent = message;
+	container.appendChild(node);
+	// Clean up after 5 s so the DOM doesn't grow forever
+	_assertiveTimer = setTimeout(() => { container.textContent = ''; }, 5000);
 }
 
 function updateStatRowA11y(rowId, label, valueText) {
@@ -530,6 +544,10 @@ function hasCompleteSupplyChain() {
 
 // Core game functions
 function collectBalls() {
+	if (!game.prestige.firstBounce) {
+		game.prestige.firstBounce = true;
+		game.prestige.runStartTime = Date.now();
+	}
 	const eff = getEffects();
 	const pe = getPrestigeEffects();
 	const amount = (1 + eff.clickAdd) * eff.cosmicClickMult * pe.clickMult;
@@ -905,7 +923,7 @@ const milestones = [
 	{ id: 'celestial_star', test: () => game.cosmic.currentTier >= 3, title: 'Stellar Genesis!', desc: 'Your bouncy star illuminates the cosmos!' },
 	{ id: 'celestial_blackhole', test: () => game.cosmic.currentTier >= 5, title: 'Event Horizon!', desc: 'A bouncy black hole bends spacetime!' },
 	{ id: 'celestial_galaxy', test: () => game.cosmic.currentTier >= 7, title: 'Galactic Formation!', desc: 'A bouncy galaxy spirals into existence!' },
-	{ id: 'prestige_panel', test: () => game.prestige.singularityCount > 0 || game.cosmic.currentTier >= 9, title: 'Singularity!', desc: 'Collapse the universe for ultimate power.', show: ['#prestige-panel'] }
+	{ id: 'prestige_panel', test: () => game.prestige.singularityCount > 0 || game.cosmic.currentTier >= 9, title: 'Singularity!', desc: 'Collapse the universe for ultimate power.', show: ['#prestige-panel', '#stat-timer'] }
 ];
 
 const progressionStages = [
@@ -1094,6 +1112,15 @@ function loadGame() {
 			if (!game.prestige.runStartTime) game.prestige.runStartTime = Date.now();
 			if (!Number.isFinite(game.prestige.bestTime) || game.prestige.bestTime <= 0) {
 				game.prestige.bestTime = Infinity;
+			}
+			// Migrate saves that lack the accumulated timer fields
+			if (game.prestige.runElapsed === undefined) {
+				// Estimate elapsed from wall-clock as a one-time migration
+				game.prestige.runElapsed = Math.max(0, (Date.now() - game.prestige.runStartTime) / 1000);
+			}
+			if (game.prestige.firstBounce === undefined) {
+				// Assume the player has already bounced if they have any total balls
+				game.prestige.firstBounce = game.totalBalls > 0;
 			}
 		}
 		if (s.sandbox) game.sandbox = true;
@@ -1449,7 +1476,7 @@ function getPrestigeSpeedBonus(runTime, bestTime) {
 }
 
 function calculateSpPreview() {
-	const runTime = (Date.now() - game.prestige.runStartTime) / 1000;
+	const runTime = game.prestige.runElapsed;
 	let base = PRESTIGE_BASE_SP;
 	let speedBonus = getPrestigeSpeedBonus(runTime, game.prestige.bestTime);
 	return { base, speedBonus, total: base + speedBonus, runTime };
@@ -1458,7 +1485,7 @@ function calculateSpPreview() {
 function performPrestigeReset() {
 	if (game.cosmic.currentTier < CELESTIAL_TIERS.length) return;
 	// Calculate SP earned
-	const runTime = (Date.now() - game.prestige.runStartTime) / 1000;
+	const runTime = game.prestige.runElapsed;
 	let spEarned = PRESTIGE_BASE_SP;
 	const speedBonus = getPrestigeSpeedBonus(runTime, game.prestige.bestTime);
 	spEarned += speedBonus;
@@ -1472,6 +1499,8 @@ function performPrestigeReset() {
 	game.prestige.singularityPoints += spEarned;
 	game.prestige.totalBallsAllTime += game.totalBalls;
 	game.prestige.runStartTime = Date.now();
+	game.prestige.runElapsed = 0;
+	game.prestige.firstBounce = false;
 
 	showToast(`Universe Collapsed!`, `+${spEarned} Singularity Points. Total: ${game.prestige.singularityPoints} SP`);
 
@@ -1514,7 +1543,7 @@ function performPrestigeReset() {
 	game.seen = {};
 	['#rubber-panel', '#production-panel', '#upgrades-panel', '#planets-panel',
 	 '#logistics-panel', '#cosmic-panel', '#prestige-panel',
-	 '#stat-bps', '#stat-rubber', '#stat-rps', '#stat-planets'].forEach(sel => {
+	 '#stat-bps', '#stat-rubber', '#stat-rps', '#stat-planets', '#stat-timer'].forEach(sel => {
 		const el = document.querySelector(sel);
 		if (el) el.style.display = 'none';
 	});
@@ -1955,6 +1984,10 @@ function gameLoop() {
 		const dt = Math.min(elapsed, 0.1);
 		elapsed -= dt;
 		gameTick(dt);
+		// Accumulate iteration timer only while tab is visible and first bounce happened
+		if (tabVisible && game.prestige.firstBounce) {
+			game.prestige.runElapsed += dt;
+		}
 	}
 	updateDisplay();
 	// Throttle milestone/achievement checks to once per second
@@ -2179,6 +2212,22 @@ function updateDisplay(forceFull) {
 	updateStatRowA11y('stat-planets', 'Total Planets', `${game.planets.length} colonized` +
 		(game.probes.discoveredPlanets.length > 0 ? ` / ${game.probes.discoveredPlanets.length} discovered` : '') +
 		synergyText + empireText);
+
+	// Iteration timer display
+	const timerDisplay = document.getElementById('timer-display');
+	if (timerDisplay) {
+		if (!game.prestige.firstBounce) {
+			timerDisplay.textContent = 'waiting for first bounce';
+		} else {
+			let timerText = formatDuration(game.prestige.runElapsed);
+			if (Number.isFinite(game.prestige.bestTime) && game.prestige.bestTime > 0) {
+				timerText += ` (best: ${formatDuration(game.prestige.bestTime)})`;
+			}
+			timerDisplay.textContent = timerText;
+		}
+		updateStatRowA11y('stat-timer', 'Iteration Time', timerDisplay.textContent);
+	}
+
 	const hasRubberWorld = game.planets.some(planet => planet.role === 'rubber');
 	const hasBallWorld = game.planets.some(planet => planet.role === 'ball');
 	const hasHybridWorld = game.planets.some(planet => planet.role === 'hybrid');
@@ -3946,6 +3995,31 @@ document.addEventListener('keydown', function(e) {
 		e.preventDefault();
 		collectBalls();
 	}
+	if (e.key === 't' && e.target === document.body) {
+		// Announce iteration timer for accessibility / quick check
+		if (!game.seen['prestige_panel']) return;
+		let msg;
+		if (!game.prestige.firstBounce) {
+			msg = 'Iteration timer: waiting for first bounce.';
+		} else {
+			msg = 'Iteration time: ' + formatDuration(game.prestige.runElapsed);
+			if (Number.isFinite(game.prestige.bestTime) && game.prestige.bestTime > 0) {
+				const diff = game.prestige.runElapsed - game.prestige.bestTime;
+				if (diff < 0) {
+					msg += '. Ahead of best by ' + formatDuration(Math.abs(diff));
+				} else if (diff > 0) {
+					msg += '. Behind best by ' + formatDuration(diff);
+				} else {
+					msg += '. Matching best time';
+				}
+			}
+		}
+		announceAssertive(msg);
+	}
+});
+
+document.addEventListener('visibilitychange', function() {
+	tabVisible = !document.hidden;
 });
 
 // Load saved game before first render
